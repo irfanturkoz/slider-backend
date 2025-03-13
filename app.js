@@ -9,12 +9,18 @@ require('dotenv').config();
 
 const app = express();
 
-// CORS ayarlarını genişlet
+// CORS ayarlarını düzelt - tüm domainlere izin ver
 app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: ['https://dizifilmpal.com', 'http://localhost:3000', 'http://localhost:5000', '*'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// CORS ön kontrol istekleri için
+app.options('*', cors());
 
 app.use(express.json());
 
@@ -23,6 +29,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Uploads klasörüne doğrudan erişim sağla - bu kısmı özellikle düzenliyoruz
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
+// Her istekte CORS başlıklarını ekle
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  next();
+});
 
 // API rotalarını kullan
 app.use('/api', apiRoutes);
