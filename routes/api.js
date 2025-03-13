@@ -118,9 +118,32 @@ router.delete('/items/:id', protect, admin, (req, res) => {
 router.get('/images', async (req, res) => {
   try {
     const images = await Image.find().sort({ order: 1 });
-    res.json(images);
+    console.log('Bulunan resimler:', images); // Debug için log
+    
+    // Eğer resim yoksa veya boş bir dizi dönerse
+    if (!images || images.length === 0) {
+      console.log('Hiç resim bulunamadı!');
+      return res.json([]);
+    }
+    
+    // Resimlerin URL'lerini kontrol et ve düzelt
+    const processedImages = images.map(img => {
+      const image = img.toObject();
+      
+      // URL'nin tam olduğundan emin ol
+      if (image.url && !image.url.startsWith('http') && !image.url.startsWith('https')) {
+        const backendUrl = process.env.BACKEND_URL || 'https://slider-backend.onrender.com';
+        image.url = `${backendUrl}${image.url.startsWith('/') ? '' : '/'}${image.url}`;
+      }
+      
+      return image;
+    });
+    
+    console.log('İşlenmiş resimler:', processedImages); // Debug için log
+    res.json(processedImages);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Resim getirme hatası:', error); // Debug için log
+    res.status(500).json({ message: error.message, stack: error.stack });
   }
 });
 
@@ -206,15 +229,23 @@ router.post('/images', protect, admin, upload.single('image'), async (req, res) 
         // URL gönderildiyse
         else if (req.body.url) {
             url = req.body.url;
+            // URL'nin tam olduğundan emin ol
+            if (!url.startsWith('http') && !url.startsWith('https')) {
+                const backendUrl = process.env.BACKEND_URL || 'https://slider-backend.onrender.com';
+                url = `${backendUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+            }
+            console.log('Alınan URL:', url); // Debug için log
         } else {
             return res.status(400).json({ message: 'Resim dosyası veya URL\'si gereklidir' });
         }
         
         // Mevcut resimleri getir
         const images = await Image.find().sort({ order: -1 });
+        console.log('Mevcut resimler:', images); // Debug için log
         
         // Yeni resim için sıra numarası belirle
         const newOrder = images.length > 0 ? (images[0].order || 0) + 1 : 1;
+        console.log('Yeni sıra numarası:', newOrder); // Debug için log
         
         // Yeni resim oluştur
         const newImage = new Image({
@@ -224,60 +255,105 @@ router.post('/images', protect, admin, upload.single('image'), async (req, res) 
         
         // Yeni resmi kaydet
         const savedImage = await newImage.save();
+        console.log('Kaydedilen resim:', savedImage); // Debug için log
         
         // Güncellenmiş resim listesini döndür
         const updatedImages = await Image.find().sort({ order: 1 });
-        res.status(201).json({ message: 'Resim eklendi', image: savedImage, images: updatedImages });
+        
+        // Resimlerin URL'lerini kontrol et ve düzelt
+        const processedImages = updatedImages.map(img => {
+            const image = img.toObject();
+            
+            // URL'nin tam olduğundan emin ol
+            if (image.url && !image.url.startsWith('http') && !image.url.startsWith('https')) {
+                const backendUrl = process.env.BACKEND_URL || 'https://slider-backend.onrender.com';
+                image.url = `${backendUrl}${image.url.startsWith('/') ? '' : '/'}${image.url}`;
+            }
+            
+            return image;
+        });
+        
+        res.status(201).json({ message: 'Resim eklendi', image: savedImage, images: processedImages });
     } catch (error) {
+        console.error('Resim ekleme hatası:', error); // Debug için log
         // Hata durumunda yüklenen dosyayı sil
         if (req.file) {
             fs.unlinkSync(path.join('public', 'uploads', req.file.filename));
         }
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message, stack: error.stack });
     }
 });
 
-// Resim silme işleminden sonra sıraları düzelt
+// Resim silme
 router.delete('/images/:id', protect, admin, async (req, res) => {
     try {
+        // Resmi bul
         const image = await Image.findById(req.params.id);
         
         if (!image) {
             return res.status(404).json({ message: 'Resim bulunamadı' });
         }
         
-        // Eğer resim lokalde yüklüyse, dosyayı sil
-        if (image.url.startsWith('/uploads/')) {
-            const filePath = path.join('public', image.url);
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
+        console.log('Silinecek resim:', image); // Debug için log
+        
+        // Eğer resim uploads klasöründe ise, dosyayı sil
+        if (image.url && image.url.includes('/uploads/')) {
+            try {
+                // URL'den dosya adını çıkar
+                const urlParts = image.url.split('/uploads/');
+                if (urlParts.length > 1) {
+                    const filename = urlParts[1].split('?')[0]; // Olası query parametrelerini kaldır
+                    const filePath = path.join('public', 'uploads', filename);
+                    
+                    console.log('Silinecek dosya yolu:', filePath); // Debug için log
+                    
+                    // Dosya varsa sil
+                    if (fs.existsSync(filePath)) {
+                        fs.unlinkSync(filePath);
+                        console.log('Dosya silindi:', filePath);
+                    } else {
+                        console.log('Dosya bulunamadı:', filePath);
+                    }
+                }
+            } catch (fileError) {
+                console.error('Dosya silme hatası:', fileError);
+                // Dosya silme hatası olsa bile resmi veritabanından silmeye devam et
             }
         }
         
-        // Resmi sil
+        // Resmi veritabanından sil
         await Image.findByIdAndDelete(req.params.id);
         
-        // Kalan resimleri sıraya göre getir
+        // Kalan resimleri getir
         const remainingImages = await Image.find().sort({ order: 1 });
+        console.log('Kalan resimler:', remainingImages); // Debug için log
         
-        // Sıra numaralarını yeniden düzenle
-        const updates = remainingImages.map((img, index) => ({
-            updateOne: {
-                filter: { _id: img._id },
-                update: { order: index + 1 }
-            }
-        }));
-        
-        if (updates.length > 0) {
-            await Image.bulkWrite(updates);
+        // Sıraları yeniden düzenle
+        for (let i = 0; i < remainingImages.length; i++) {
+            remainingImages[i].order = i + 1;
+            await remainingImages[i].save();
         }
         
-        res.json({ 
-            message: 'Resim başarıyla silindi',
-            images: await Image.find().sort({ order: 1 })
+        // Güncellenmiş resim listesini döndür
+        const updatedImages = await Image.find().sort({ order: 1 });
+        
+        // Resimlerin URL'lerini kontrol et ve düzelt
+        const processedImages = updatedImages.map(img => {
+            const image = img.toObject();
+            
+            // URL'nin tam olduğundan emin ol
+            if (image.url && !image.url.startsWith('http') && !image.url.startsWith('https')) {
+                const backendUrl = process.env.BACKEND_URL || 'https://slider-backend.onrender.com';
+                image.url = `${backendUrl}${image.url.startsWith('/') ? '' : '/'}${image.url}`;
+            }
+            
+            return image;
         });
+        
+        res.json({ message: 'Resim silindi', images: processedImages });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Resim silme hatası:', error); // Debug için log
+        res.status(500).json({ message: error.message, stack: error.stack });
     }
 });
 
