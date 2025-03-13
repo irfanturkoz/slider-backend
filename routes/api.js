@@ -221,9 +221,18 @@ router.post('/images', protect, admin, upload.single('image'), async (req, res) 
         
         // Dosya yüklendiyse
         if (req.file) {
-            // Dosya yolunu kaydet - tam URL değil, göreceli yol
+            // Dosya yükleme yerine, kullanıcıdan URL isteyeceğiz
+            // Geçici olarak dosyayı kaydet, ama kullanıcıya uyarı ver
             url = `/uploads/${req.file.filename}`;
             console.log('Kaydedilecek dosya yolu:', url); // Debug için log
+            console.log('UYARI: Render.com yeniden başlatıldığında bu dosya kaybolacak!');
+            
+            // Kullanıcıya uyarı mesajı ekle
+            return res.status(201).json({ 
+                message: 'Resim geçici olarak eklendi, ancak Render.com yeniden başlatıldığında kaybolacak. Lütfen bunun yerine URL kullanın.', 
+                image: { url, order: 1 },
+                images: await Image.find().sort({ order: 1 })
+            });
         } 
         // URL gönderildiyse
         else if (req.body.url) {
