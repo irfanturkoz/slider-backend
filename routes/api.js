@@ -130,6 +130,34 @@ router.put('/images/:id/order', protect, admin, async (req, res) => {
     }
 });
 
+// Resimleri yeniden sırala
+router.put('/images/reorder', protect, admin, async (req, res) => {
+    try {
+        const { orders } = req.body;
+        
+        // Tüm resimleri sıraya göre getir
+        const images = await Image.find().sort({ order: 1 });
+        
+        // Her resmin sırasını index + 1 olarak güncelle
+        const updates = orders.map((item, index) => ({
+            updateOne: {
+                filter: { _id: item.id },
+                update: { order: index + 1 }
+            }
+        }));
+        
+        // Toplu güncelleme yap
+        await Image.bulkWrite(updates);
+        
+        // Güncellenmiş resim listesini döndür
+        const updatedImages = await Image.find().sort({ order: 1 });
+        res.json({ message: 'Sıralama güncellendi', images: updatedImages });
+    } catch (error) {
+        console.error('Sıralama hatası:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // Yeni resim ekle
 router.post('/images', protect, admin, async (req, res) => {
     try {
@@ -139,14 +167,16 @@ router.post('/images', protect, admin, async (req, res) => {
             return res.status(400).json({ message: 'Resim URL\'si gereklidir' });
         }
         
-        // Mevcut resimleri getir ve en yüksek sıra numarasını bul
+        // Mevcut resimleri getir
         const images = await Image.find().sort({ order: -1 });
-        const maxOrder = images.length > 0 ? images[0].order : -1;
+        
+        // Yeni resim için sıra numarası belirle
+        const newOrder = images.length > 0 ? images.length + 1 : 1;
         
         // Yeni resim oluştur
         const newImage = new Image({
             url,
-            order: maxOrder + 1 // En son resimden bir fazla sıra numarası ver
+            order: newOrder
         });
         
         // Yeni resmi kaydet
@@ -160,37 +190,38 @@ router.post('/images', protect, admin, async (req, res) => {
     }
 });
 
-// Resim sil
+// Resim silme işleminden sonra sıraları düzelt
 router.delete('/images/:id', protect, admin, async (req, res) => {
-  try {
-    const image = await Image.findById(req.params.id);
-    
-    if (!image) {
-      return res.status(404).json({ message: 'Resim bulunamadı' });
-    }
-    
-    await Image.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Resim başarıyla silindi' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Resimleri yeniden sırala
-router.put('/images/reorder', protect, admin, async (req, res) => {
     try {
-        const { orders } = req.body;
+        const image = await Image.findById(req.params.id);
         
-        // Her bir resmin sırasını güncelle
-        for (const item of orders) {
-            await Image.findByIdAndUpdate(item.id, { order: item.order });
+        if (!image) {
+            return res.status(404).json({ message: 'Resim bulunamadı' });
         }
         
-        // Güncellenmiş resim listesini döndür
-        const updatedImages = await Image.find().sort({ order: 1 });
-        res.json({ message: 'Sıralama güncellendi', images: updatedImages });
+        // Resmi sil
+        await Image.findByIdAndDelete(req.params.id);
+        
+        // Kalan resimleri sıraya göre getir
+        const remainingImages = await Image.find().sort({ order: 1 });
+        
+        // Sıra numaralarını yeniden düzenle
+        const updates = remainingImages.map((img, index) => ({
+            updateOne: {
+                filter: { _id: img._id },
+                update: { order: index + 1 }
+            }
+        }));
+        
+        if (updates.length > 0) {
+            await Image.bulkWrite(updates);
+        }
+        
+        res.json({ 
+            message: 'Resim başarıyla silindi',
+            images: await Image.find().sort({ order: 1 })
+        });
     } catch (error) {
-        console.error('Sıralama hatası:', error);
         res.status(500).json({ message: error.message });
     }
 });
