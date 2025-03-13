@@ -411,21 +411,25 @@ $(document).ready(function () {
 
     // Sıra değiştirme fonksiyonu
     function sirayiDegistir(id, direction) {
+        console.log('Sıralama isteği:', id, direction); // Debug log
         $.ajax({
             url: `${API_URL}/images/${id}/order`,
             type: 'PUT',
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             },
-            data: { direction },
+            data: JSON.stringify({ direction }),
             success: function(response) {
+                console.log('Sıralama başarılı:', response); // Debug log
                 if (response.images) {
                     resimler = response.images;
                     resimleriListele();
                 }
             },
-            error: function(xhr) {
-                const hata = xhr.responseJSON ? xhr.responseJSON.message : 'Bir hata oluştu';
+            error: function(xhr, status, error) {
+                console.error('Sıralama hatası:', { xhr, status, error }); // Debug log
+                const hata = xhr.responseJSON ? xhr.responseJSON.message : error || 'Bir hata oluştu';
                 alert('Sıralama hatası: ' + hata);
             }
         });
