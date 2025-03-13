@@ -321,62 +321,54 @@ $(document).ready(function () {
         });
     }
 
-    // Resimleri listeleme fonksiyonu
+    // Resimleri listele
     function resimleriListele() {
-        const container = $('#resimListesi');
-        container.empty();
-
+        const resimListesi = document.getElementById('resimListesi');
+        resimListesi.innerHTML = '';
+        
         resimler.forEach((resim, index) => {
-            const resimItem = $('<div>')
-                .addClass('resim-item d-flex align-items-center')
-                .attr('data-id', resim._id)
-                .attr('data-order', resim.order || index);
-
-            // Resim
-            const img = $('<img>')
-                .addClass('img-thumbnail')
-                .attr('src', resim.url)
-                .attr('alt', `Resim ${index + 1}`);
-
-            // Bilgi bölümü
-            const info = $('<div>').addClass('flex-grow-1 ml-3');
-            const siraNo = $('<div>').addClass('font-weight-bold').text(`Sıra: ${resim.order || index + 1}`);
-            const url = $('<div>').addClass('text-muted small').text(resim.url);
-            info.append(siraNo, url);
-
-            // Silme butonu
-            const deleteBtn = $('<button>')
-                .addClass('btn btn-danger btn-sm ml-3')
-                .html('<i class="fas fa-trash"></i>')
-                .on('click', () => resimSil(resim._id));
-
-            resimItem.append(img, info, deleteBtn);
-            container.append(resimItem);
-        });
-
-        // Sürükle-bırak sıralama özelliğini aktifleştir
-        container.sortable({
-            items: '.resim-item',
-            handle: 'img',
-            placeholder: 'resim-item ui-state-highlight',
-            update: function(event, ui) {
-                const yeniSiralama = [];
-                $('.resim-item').each(function(index) {
-                    yeniSiralama.push({
-                        id: $(this).data('id'),
-                        order: index
-                    });
-                });
-                siralamayiKaydet(yeniSiralama);
-            }
+            const resimItem = document.createElement('div');
+            resimItem.className = 'resim-item mb-3 p-3 border rounded';
+            resimItem.setAttribute('data-id', resim._id);
+            
+            // Resim URL'sini düzelt
+            const resimUrl = resim.url.startsWith('http') ? resim.url : `${API_URL}${resim.url}`;
+            
+            resimItem.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <img src="${resimUrl}" alt="Resim" style="max-width: 200px; max-height: 150px; object-fit: cover;" class="mr-3">
+                    <div>
+                        <p class="mb-1">Sıra: ${resim.order}</p>
+                        <p class="mb-1">URL: ${resim.url}</p>
+                        <button class="btn btn-danger btn-sm" onclick="resmiSil('${resim._id}')">
+                            <i class="fas fa-trash"></i> Sil
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            resimListesi.appendChild(resimItem);
         });
         
-        // Yedek olarak LocalStorage'a da kaydet
-        localStorage.setItem('sliderResimleri', JSON.stringify(resimler));
+        // Sortable özelliğini aktifleştir
+        if (resimler.length > 1) {
+            $("#resimListesi").sortable({
+                update: function(event, ui) {
+                    const yeniSiralama = [];
+                    $("#resimListesi .resim-item").each(function(index) {
+                        yeniSiralama.push({
+                            id: $(this).data('id'),
+                            order: index + 1
+                        });
+                    });
+                    sirayiDegistir(yeniSiralama);
+                }
+            });
+        }
     }
 
     // Yeni sıralamayı kaydet
-    function siralamayiKaydet(yeniSiralama) {
+    function sirayiDegistir(yeniSiralama) {
         $.ajax({
             url: `${API_URL}/images/reorder`,
             type: 'PUT',
