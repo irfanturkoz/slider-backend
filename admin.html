@@ -64,17 +64,23 @@
                 <h5 class="mb-0">Yeni Resim Ekle</h5>
             </div>
             <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong>Uyarı!</strong> Render.com'un ücretsiz planında dosya yüklemeleri kalıcı değildir. 
+                    Her yeni dağıtımda (deploy) yüklenen dosyalar kaybolur. Lütfen bunun yerine harici bir URL kullanın.
+                </div>
                 <form id="resimForm" class="mb-3">
                     <div class="mb-3">
-                        <label for="imageFile" class="form-label">Resim Dosyası</label>
-                        <input type="file" class="form-control" id="imageFile" name="image" accept="image/*">
+                        <label for="imageUrl" class="form-label"><strong>Resim URL'si (Önerilen)</strong></label>
+                        <input type="text" class="form-control" id="imageUrl" name="url" placeholder="https://...">
+                        <small class="text-muted">Kalıcı olması için harici bir resim URL'si kullanın (örn. imgur, postimages.org)</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">VEYA</label>
                     </div>
                     <div class="mb-3">
-                        <label for="imageUrl" class="form-label">Resim URL'si</label>
-                        <input type="text" class="form-control" id="imageUrl" name="url" placeholder="https://...">
+                        <label for="imageFile" class="form-label">Resim Dosyası (Geçici)</label>
+                        <input type="file" class="form-control" id="imageFile" name="image" accept="image/*">
+                        <small class="text-danger">Dikkat: Bu şekilde yüklenen dosyalar Render.com yeniden başlatıldığında kaybolacaktır!</small>
                     </div>
                     <button type="submit" class="btn btn-primary">Resim Ekle</button>
                 </form>
