@@ -332,7 +332,12 @@ $(document).ready(function () {
             resimItem.setAttribute('data-id', resim._id);
             
             // Resim URL'sini düzelt
-            const resimUrl = resim.url.startsWith('http') ? resim.url : `${API_URL}${resim.url}`;
+            let resimUrl = resim.url;
+            if (resimUrl && resimUrl.startsWith('/uploads/')) {
+                resimUrl = `${API_URL.replace('/api', '')}${resimUrl}`;
+            } else if (!resimUrl.startsWith('http')) {
+                resimUrl = `${API_URL.replace('/api', '')}${resimUrl}`;
+            }
             
             resimItem.innerHTML = `
                 <div class="d-flex align-items-center">
