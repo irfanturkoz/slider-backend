@@ -85,6 +85,9 @@
         
         // Resimleri carousel'a ekle
         function resimleriGoster(resimler) {
+            // Resimleri sıraya göre sırala
+            resimler.sort((a, b) => (a.order || 0) - (b.order || 0));
+            
             // Carousel göstergelerini oluştur
             let indicatorsHtml = '';
             resimler.forEach((resim, index) => {

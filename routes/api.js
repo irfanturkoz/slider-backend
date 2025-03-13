@@ -142,4 +142,23 @@ router.delete('/images/:id', protect, admin, async (req, res) => {
   }
 });
 
+// Resim sırasını güncelle
+router.put('/images/:id/order', protect, async (req, res) => {
+    try {
+        const { order } = req.body;
+        const image = await Image.findById(req.params.id);
+        
+        if (!image) {
+            return res.status(404).json({ message: 'Resim bulunamadı' });
+        }
+
+        image.order = order;
+        await image.save();
+
+        res.json({ message: 'Resim sırası güncellendi' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 module.exports = router; 

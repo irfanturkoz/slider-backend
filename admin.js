@@ -337,13 +337,21 @@ $(document).ready(function () {
     // Resimleri listeleme fonksiyonu
     function resimleriListele() {
         let html = "";
+        // Resimleri sıraya göre sırala
+        resimler.sort((a, b) => (a.order || 0) - (b.order || 0));
+        
         resimler.forEach((resim, index) => {
             html += `
                 <tr>
                     <td>
-                        <button class="btn btn-danger btn-sm" onclick="resimSil('${resim._id || index}')">Sil</button>
+                        <div class="btn-group">
+                            <button class="btn btn-danger btn-sm" onclick="resimSil('${resim._id || index}')">Sil</button>
+                            <button class="btn btn-primary btn-sm" onclick="sirayiDegistir('${resim._id}', 'up')" ${index === 0 ? 'disabled' : ''}>↑</button>
+                            <button class="btn btn-primary btn-sm" onclick="sirayiDegistir('${resim._id}', 'down')" ${index === resimler.length - 1 ? 'disabled' : ''}>↓</button>
+                        </div>
                     </td>
-                    <td><img src="${resim.url}" alt="Resim ${index + 1}" class="img-thumbnail"></td>
+                    <td>${index + 1}</td>
+                    <td><img src="${resim.url}" alt="Resim ${index + 1}" class="img-thumbnail" style="max-height: 100px;"></td>
                     <td>${resim.url}</td>
                 </tr>
             `;
@@ -353,6 +361,44 @@ $(document).ready(function () {
         // Yedek olarak LocalStorage'a da kaydet
         localStorage.setItem('sliderResimleri', JSON.stringify(resimler));
     }
+
+    // Sıra değiştirme fonksiyonu
+    window.sirayiDegistir = function(id, direction) {
+        const currentIndex = resimler.findIndex(r => r._id === id);
+        if (currentIndex === -1) return;
+
+        const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+        if (newIndex < 0 || newIndex >= resimler.length) return;
+
+        // Sıraları güncelle
+        const temp = resimler[currentIndex].order;
+        resimler[currentIndex].order = resimler[newIndex].order;
+        resimler[newIndex].order = temp;
+
+        // API'ye gönder
+        $.ajax({
+            url: `${API_URL}/images/${id}/order`,
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            contentType: 'application/json',
+            data: JSON.stringify({ order: resimler[currentIndex].order }),
+            success: function() {
+                resimleriGetir(); // Listeyi yenile
+            },
+            error: function(err) {
+                console.error('Sıra değiştirme hatası:', err);
+                if (err.status === 401) {
+                    localStorage.removeItem('adminToken');
+                    localStorage.removeItem('adminUsername');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                alert('Sıra değiştirme işlemi başarısız oldu.');
+            }
+        });
+    };
 
     // Resim ekleme fonksiyonu
     $("#resimEkleForm").submit(function (e) {
