@@ -198,8 +198,8 @@ router.post('/images', protect, admin, upload.single('image'), async (req, res) 
         
         // Dosya yüklendiyse
         if (req.file) {
-            // Tam URL oluştur
-            url = `${process.env.BACKEND_URL || 'https://slider-backend.onrender.com'}/uploads/${req.file.filename}`;
+            // Tam URL oluştur - doğrudan /uploads/ yolunu kullan
+            url = `/uploads/${req.file.filename}`;
         } 
         // URL gönderildiyse
         else if (req.body.url) {
@@ -212,7 +212,7 @@ router.post('/images', protect, admin, upload.single('image'), async (req, res) 
         const images = await Image.find().sort({ order: -1 });
         
         // Yeni resim için sıra numarası belirle
-        const newOrder = images.length > 0 ? images.length + 1 : 1;
+        const newOrder = images.length > 0 ? (images[0].order || 0) + 1 : 1;
         
         // Yeni resim oluştur
         const newImage = new Image({
