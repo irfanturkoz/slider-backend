@@ -2,6 +2,39 @@ const express = require('express');
 const router = express.Router();
 const Image = require('../models/Image');
 const { protect, admin } = require('../middleware/auth');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Multer ayarları
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = 'public/uploads';
+        // Klasör yoksa oluştur
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    fileFilter: function (req, file, cb) {
+        const filetypes = /jpeg|jpg|png|gif/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('Sadece resim dosyaları yüklenebilir!'));
+    }
+});
 
 // Örnek veri
 let items = [
@@ -130,56 +163,120 @@ router.put('/images/:id/order', protect, admin, async (req, res) => {
     }
 });
 
-// Yeni resim ekle
-router.post('/images', protect, admin, async (req, res) => {
+// Resimleri yeniden sırala
+router.put('/images/reorder', protect, admin, async (req, res) => {
     try {
-        const { url } = req.body;
+        const { orders } = req.body;
         
-        if (!url) {
-            return res.status(400).json({ message: 'Resim URL\'si gereklidir' });
+        // Tüm resimleri sıraya göre getir
+        const images = await Image.find().sort({ order: 1 });
+        
+        // Her resmin sırasını index + 1 olarak güncelle
+        const updates = orders.map((item, index) => ({
+            updateOne: {
+                filter: { _id: item.id },
+                update: { order: index + 1 }
+            }
+        }));
+        
+        // Toplu güncelleme yap
+        await Image.bulkWrite(updates);
+        
+        // Güncellenmiş resim listesini döndür
+        const updatedImages = await Image.find().sort({ order: 1 });
+        res.json({ message: 'Sıralama güncellendi', images: updatedImages });
+    } catch (error) {
+        console.error('Sıralama hatası:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Yeni resim ekle (URL veya dosya yükleme)
+router.post('/images', protect, admin, upload.single('image'), async (req, res) => {
+    try {
+        let url;
+        
+        // Dosya yüklendiyse
+        if (req.file) {
+            // Tam URL oluştur
+            url = `${process.env.BACKEND_URL || 'https://slider-backend.onrender.com'}/uploads/${req.file.filename}`;
+        } 
+        // URL gönderildiyse
+        else if (req.body.url) {
+            url = req.body.url;
+        } else {
+            return res.status(400).json({ message: 'Resim dosyası veya URL\'si gereklidir' });
         }
         
         // Mevcut resimleri getir
         const images = await Image.find().sort({ order: -1 });
         
         // Yeni resim için sıra numarası belirle
-        const order = images.length > 0 ? images[0].order + 1 : 0;
+        const newOrder = images.length > 0 ? images.length + 1 : 1;
         
         // Yeni resim oluştur
         const newImage = new Image({
             url,
-            order
+            order: newOrder
         });
-        
-        // Maksimum 6 resim kontrolü
-        if (images.length >= 6) {
-            // En düşük sıra numaralı resmi sil
-            const oldestImage = images[images.length - 1];
-            await Image.findByIdAndDelete(oldestImage._id);
-        }
         
         // Yeni resmi kaydet
         const savedImage = await newImage.save();
-        res.status(201).json(savedImage);
+        
+        // Güncellenmiş resim listesini döndür
+        const updatedImages = await Image.find().sort({ order: 1 });
+        res.status(201).json({ message: 'Resim eklendi', image: savedImage, images: updatedImages });
     } catch (error) {
+        // Hata durumunda yüklenen dosyayı sil
+        if (req.file) {
+            fs.unlinkSync(path.join('public', 'uploads', req.file.filename));
+        }
         res.status(500).json({ message: error.message });
     }
 });
 
-// Resim sil
+// Resim silme işleminden sonra sıraları düzelt
 router.delete('/images/:id', protect, admin, async (req, res) => {
-  try {
-    const image = await Image.findById(req.params.id);
-    
-    if (!image) {
-      return res.status(404).json({ message: 'Resim bulunamadı' });
+    try {
+        const image = await Image.findById(req.params.id);
+        
+        if (!image) {
+            return res.status(404).json({ message: 'Resim bulunamadı' });
+        }
+        
+        // Eğer resim lokalde yüklüyse, dosyayı sil
+        if (image.url.startsWith('/uploads/')) {
+            const filePath = path.join('public', image.url);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+        
+        // Resmi sil
+        await Image.findByIdAndDelete(req.params.id);
+        
+        // Kalan resimleri sıraya göre getir
+        const remainingImages = await Image.find().sort({ order: 1 });
+        
+        // Sıra numaralarını yeniden düzenle
+        const updates = remainingImages.map((img, index) => ({
+            updateOne: {
+                filter: { _id: img._id },
+                update: { order: index + 1 }
+            }
+        }));
+        
+        if (updates.length > 0) {
+            await Image.bulkWrite(updates);
+        }
+        
+        res.json({ 
+            message: 'Resim başarıyla silindi',
+            images: await Image.find().sort({ order: 1 })
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-    
-    await Image.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Resim başarıyla silindi' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
 });
 
 module.exports = router; 
