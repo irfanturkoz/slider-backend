@@ -412,7 +412,7 @@ $(document).ready(function () {
     // Sıra değiştirme fonksiyonu
     function sirayiDegistir(id, direction) {
         $.ajax({
-            url: `/api/images/${id}/order`,
+            url: `${API_URL}/images/${id}/order`,
             type: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`
