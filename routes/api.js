@@ -118,7 +118,7 @@ router.delete('/items/:id', protect, admin, (req, res) => {
 router.get('/images', async (req, res) => {
   try {
     const images = await Image.find().sort({ order: 1 });
-    console.log('Bulunan resimler:', images); // Debug için log
+    console.log('Bulunan resimler:', JSON.stringify(images, null, 2)); // Detaylı log
     
     // Eğer resim yoksa veya boş bir dizi dönerse
     if (!images || images.length === 0) {
@@ -139,7 +139,7 @@ router.get('/images', async (req, res) => {
       return image;
     });
     
-    console.log('İşlenmiş resimler:', processedImages); // Debug için log
+    console.log('İşlenmiş resimler:', JSON.stringify(processedImages, null, 2)); // Detaylı log
     res.json(processedImages);
   } catch (error) {
     console.error('Resim getirme hatası:', error); // Debug için log
@@ -221,19 +221,13 @@ router.post('/images', protect, admin, upload.single('image'), async (req, res) 
         
         // Dosya yüklendiyse
         if (req.file) {
-            // Tam URL oluştur - backend URL'sini kullanarak
-            const backendUrl = process.env.BACKEND_URL || 'https://slider-backend.onrender.com';
-            url = `${backendUrl}/uploads/${req.file.filename}`;
-            console.log('Oluşturulan resim URL:', url); // Debug için log
+            // Dosya yolunu kaydet - tam URL değil, göreceli yol
+            url = `/uploads/${req.file.filename}`;
+            console.log('Kaydedilecek dosya yolu:', url); // Debug için log
         } 
         // URL gönderildiyse
         else if (req.body.url) {
             url = req.body.url;
-            // URL'nin tam olduğundan emin ol
-            if (!url.startsWith('http') && !url.startsWith('https')) {
-                const backendUrl = process.env.BACKEND_URL || 'https://slider-backend.onrender.com';
-                url = `${backendUrl}${url.startsWith('/') ? '' : '/'}${url}`;
-            }
             console.log('Alınan URL:', url); // Debug için log
         } else {
             return res.status(400).json({ message: 'Resim dosyası veya URL\'si gereklidir' });
@@ -241,7 +235,7 @@ router.post('/images', protect, admin, upload.single('image'), async (req, res) 
         
         // Mevcut resimleri getir
         const images = await Image.find().sort({ order: -1 });
-        console.log('Mevcut resimler:', images); // Debug için log
+        console.log('Mevcut resimler:', JSON.stringify(images, null, 2)); // Detaylı log
         
         // Yeni resim için sıra numarası belirle
         const newOrder = images.length > 0 ? (images[0].order || 0) + 1 : 1;
@@ -255,7 +249,7 @@ router.post('/images', protect, admin, upload.single('image'), async (req, res) 
         
         // Yeni resmi kaydet
         const savedImage = await newImage.save();
-        console.log('Kaydedilen resim:', savedImage); // Debug için log
+        console.log('Kaydedilen resim:', JSON.stringify(savedImage, null, 2)); // Detaylı log
         
         // Güncellenmiş resim listesini döndür
         const updatedImages = await Image.find().sort({ order: 1 });

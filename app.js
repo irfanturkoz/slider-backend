@@ -30,11 +30,25 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Uploads klasörüne doğrudan erişim sağla - bu kısmı özellikle düzenliyoruz
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
+// Uploads klasörünün varlığını kontrol et ve oluştur
+const uploadsDir = path.join(__dirname, 'public/uploads');
+const fs = require('fs');
+if (!fs.existsSync(uploadsDir)) {
+  console.log('Uploads klasörü oluşturuluyor:', uploadsDir);
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // Her istekte CORS başlıklarını ekle
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  // Uploads klasörüne erişim için özel kontrol
+  if (req.url.startsWith('/uploads/')) {
+    console.log('Uploads klasörüne erişim:', req.url);
+  }
+  
   next();
 });
 
