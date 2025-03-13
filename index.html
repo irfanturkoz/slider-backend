@@ -16,25 +16,46 @@
         html, body {
             margin: 0;
             padding: 0;
+            height: 100%;
+            overflow: hidden;
         }
         .carousel {
             width: 100%;
+            height: 100vh;
         }
         .carousel-inner {
             width: 100%;
+            height: 100%;
         }
         .carousel-item {
             width: 100%;
+            height: 100%;
         }
         .carousel-item img {
             width: 100%;
             height: auto;
-            object-fit: cover;
+            object-fit: contain;
+            max-width: 100%;
+        }
+        /* Carousel kontrolleri için daha belirgin stil */
+        .carousel-control-prev, .carousel-control-next {
+            width: 5%;
+            opacity: 0.7;
+        }
+        .carousel-control-prev:hover, .carousel-control-next:hover {
+            opacity: 1;
+        }
+        .carousel-indicators li {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin: 0 5px;
         }
     </style>
 </head>
 <body>
-    <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel">
+    <!-- data-ride ve data-interval özelliklerini kaldırdık -->
+    <div id="carouselExampleIndicators" class="carousel slide">
         <ol class="carousel-indicators" id="carousel-indicators">
           <!-- Göstergeler dinamik olarak eklenecek -->
         </ol>
@@ -58,6 +79,10 @@
         const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? 'http://localhost:3000/api'
             : 'https://slider-backend.onrender.com/api';
+        
+        // Carousel ayarları
+        const CAROUSEL_INTERVAL = 10000; // 10 saniye
+        let carouselTimer = null; // Carousel zamanlayıcısı
         
         // Resimleri API'den çek
         function resimleriGetir() {
@@ -83,6 +108,20 @@
             });
         }
         
+        // Özel carousel kontrolü
+        function manuelCarouselKontrol() {
+            // Eğer önceki bir zamanlayıcı varsa temizle
+            if (carouselTimer) {
+                clearTimeout(carouselTimer);
+            }
+            
+            // 10 saniye sonra bir sonraki resme geç
+            carouselTimer = setTimeout(function() {
+                $('#carouselExampleIndicators').carousel('next');
+                manuelCarouselKontrol(); // Tekrar çağır
+            }, CAROUSEL_INTERVAL);
+        }
+        
         // Resimleri carousel'a ekle
         function resimleriGoster(resimler) {
             // Resimleri sıraya göre sırala
@@ -106,9 +145,17 @@
             });
             $('#carousel-inner').html(itemsHtml);
             
-            // Carousel'ı başlat
+            // Bootstrap'in otomatik geçişini devre dışı bırak
             $('#carouselExampleIndicators').carousel({
-                interval: 5000 // 5 saniye
+                interval: false
+            });
+            
+            // Manuel carousel kontrolünü başlat
+            manuelCarouselKontrol();
+            
+            // Kullanıcı manuel geçiş yaptığında zamanlayıcıyı sıfırla
+            $('#carouselExampleIndicators').on('slid.bs.carousel', function() {
+                manuelCarouselKontrol();
             });
         }
         
