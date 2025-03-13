@@ -137,9 +137,15 @@
             // Carousel öğelerini oluştur
             let itemsHtml = '';
             resimler.forEach((resim, index) => {
+                // Resim URL'sini kontrol et ve gerekirse backend URL'si ile birleştir
+                let imageUrl = resim.url;
+                if (imageUrl && imageUrl.startsWith('/uploads/')) {
+                    imageUrl = `${API_URL.replace('/api', '')}${imageUrl}`;
+                }
+                
                 itemsHtml += `
                     <div class="carousel-item ${index === 0 ? 'active' : ''}">
-                        <img src="${resim.url}" class="d-block w-100" alt="Slider Resim ${index + 1}">
+                        <img src="${imageUrl}" class="d-block w-100" alt="Slider Resim ${index + 1}">
                     </div>
                 `;
             });
