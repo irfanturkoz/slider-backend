@@ -139,63 +139,34 @@ router.post('/images', protect, admin, async (req, res) => {
             return res.status(400).json({ message: 'Resim URL\'si gereklidir' });
         }
         
-        // Mevcut resimleri getir
+        // Mevcut resimleri getir ve en yüksek sıra numarasını bul
         const images = await Image.find().sort({ order: -1 });
-        
-        // Yeni resim için sıra numarası belirle
-        const order = images.length > 0 ? images[0].order + 1 : 0;
+        const maxOrder = images.length > 0 ? images[0].order : -1;
         
         // Yeni resim oluştur
         const newImage = new Image({
             url,
-            order
+            order: maxOrder + 1 // En son resimden bir fazla sıra numarası ver
         });
         
-        // Maksimum 6 resim kontrolü
+        // Maksimum 6 resim olacak şekilde kontrol et
         if (images.length >= 6) {
-            // En düşük sıra numaralı resmi sil
-            const oldestImage = images[images.length - 1];
-            await Image.findByIdAndDelete(oldestImage._id);
+            // En eski resmi bul ve sil
+            const oldestImage = await Image.findOne().sort({ createdAt: 1 });
+            if (oldestImage) {
+                await Image.findByIdAndDelete(oldestImage._id);
+            }
         }
         
         // Yeni resmi kaydet
         const savedImage = await newImage.save();
-        res.status(201).json(savedImage);
+        
+        // Güncellenmiş resim listesini döndür
+        const updatedImages = await Image.find().sort({ order: 1 });
+        res.status(201).json({ message: 'Resim eklendi', image: savedImage, images: updatedImages });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-<<<<<<< HEAD
-    
-    // Mevcut resimleri getir ve en yüksek sıra numarasını bul
-    const images = await Image.find().sort({ order: -1 });
-    const maxOrder = images.length > 0 ? images[0].order : -1;
-    
-    // Yeni resim oluştur
-    const newImage = new Image({
-      url,
-      order: maxOrder + 1 // En son resimden bir fazla sıra numarası ver
-    });
-    
-    // Maksimum 6 resim olacak şekilde kontrol et
-    if (images.length >= 6) {
-      // En eski resmi bul ve sil
-      const oldestImage = await Image.findOne().sort({ createdAt: 1 });
-      if (oldestImage) {
-        await Image.findByIdAndDelete(oldestImage._id);
-      }
-    }
-    
-    // Yeni resmi kaydet
-    const savedImage = await newImage.save();
-    
-    // Güncellenmiş resim listesini döndür
-    const updatedImages = await Image.find().sort({ order: 1 });
-    res.status(201).json({ message: 'Resim eklendi', image: savedImage, images: updatedImages });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-=======
->>>>>>> 0049c2bf20b43ae44d1eb1d572557322aceac98f
 });
 
 // Resim sil
