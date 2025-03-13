@@ -124,6 +124,8 @@
         
         // Resimleri carousel'a ekle
         function resimleriGoster(resimler) {
+            console.log('Gelen resimler:', resimler); // Debug için log
+            
             // Resimleri sıraya göre sırala
             resimler.sort((a, b) => (a.order || 0) - (b.order || 0));
             
@@ -137,11 +139,9 @@
             // Carousel öğelerini oluştur
             let itemsHtml = '';
             resimler.forEach((resim, index) => {
-                // Resim URL'sini kontrol et ve gerekirse backend URL'si ile birleştir
-                let imageUrl = resim.url;
-                if (imageUrl && imageUrl.startsWith('/uploads/')) {
-                    imageUrl = `${API_URL.replace('/api', '')}${imageUrl}`;
-                }
+                // Resim URL'sini kullan - backend tarafından tam URL döndürülüyor
+                const imageUrl = resim.url;
+                console.log(`Resim ${index + 1} URL:`, imageUrl); // Debug için log
                 
                 itemsHtml += `
                     <div class="carousel-item ${index === 0 ? 'active' : ''}">

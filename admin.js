@@ -323,6 +323,8 @@ $(document).ready(function () {
 
     // Resimleri listele
     function resimleriListele() {
+        console.log('Listelenecek resimler:', resimler); // Debug için log
+        
         const resimListesi = document.getElementById('resimListesi');
         resimListesi.innerHTML = '';
         
@@ -331,13 +333,9 @@ $(document).ready(function () {
             resimItem.className = 'resim-item mb-3 p-3 border rounded';
             resimItem.setAttribute('data-id', resim._id);
             
-            // Resim URL'sini düzelt
-            let resimUrl = resim.url;
-            if (resimUrl && resimUrl.startsWith('/uploads/')) {
-                resimUrl = `${API_URL.replace('/api', '')}${resimUrl}`;
-            } else if (!resimUrl.startsWith('http')) {
-                resimUrl = `${API_URL.replace('/api', '')}${resimUrl}`;
-            }
+            // Resim URL'sini kullan - backend tarafından tam URL döndürülüyor
+            const resimUrl = resim.url;
+            console.log(`Resim ${index + 1} URL:`, resimUrl); // Debug için log
             
             resimItem.innerHTML = `
                 <div class="d-flex align-items-center">
