@@ -345,7 +345,7 @@ $(document).ready(function () {
                 <tr>
                     <td>
                         <div class="btn-group">
-                            <button class="btn btn-danger btn-sm" onclick="resimSil('${resim._id || index}')">Sil</button>
+                            <button class="btn btn-danger btn-sm" onclick="resimSil('${resim._id}')">Sil</button>
                             <button class="btn btn-primary btn-sm" onclick="sirayiDegistir('${resim._id}', 'up')" ${index === 0 ? 'disabled' : ''}>↑</button>
                             <button class="btn btn-primary btn-sm" onclick="sirayiDegistir('${resim._id}', 'down')" ${index === resimler.length - 1 ? 'disabled' : ''}>↓</button>
                         </div>
@@ -370,31 +370,45 @@ $(document).ready(function () {
         const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
         if (newIndex < 0 || newIndex >= resimler.length) return;
 
-        // Sıraları güncelle
-        const temp = resimler[currentIndex].order;
-        resimler[currentIndex].order = resimler[newIndex].order;
-        resimler[newIndex].order = temp;
+        // Sıraları değiştir
+        const temp = resimler[currentIndex];
+        resimler[currentIndex] = resimler[newIndex];
+        resimler[newIndex] = temp;
 
-        // API'ye gönder
+        // Her iki resmin sıra numaralarını güncelle
+        const currentOrder = resimler[currentIndex].order;
+        const newOrder = resimler[newIndex].order;
+
+        // API'ye ilk resmin güncellemesini gönder
         $.ajax({
-            url: `${API_URL}/images/${id}/order`,
+            url: `${API_URL}/images/${resimler[currentIndex]._id}/order`,
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`
             },
             contentType: 'application/json',
-            data: JSON.stringify({ order: resimler[currentIndex].order }),
+            data: JSON.stringify({ order: newOrder }),
             success: function() {
-                resimleriGetir(); // Listeyi yenile
+                // API'ye ikinci resmin güncellemesini gönder
+                $.ajax({
+                    url: `${API_URL}/images/${resimler[newIndex]._id}/order`,
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    contentType: 'application/json',
+                    data: JSON.stringify({ order: currentOrder }),
+                    success: function() {
+                        resimleriGetir(); // Listeyi yenile
+                    },
+                    error: function(err) {
+                        console.error('Sıra değiştirme hatası:', err);
+                        alert('Sıra değiştirme işlemi başarısız oldu.');
+                    }
+                });
             },
             error: function(err) {
                 console.error('Sıra değiştirme hatası:', err);
-                if (err.status === 401) {
-                    localStorage.removeItem('adminToken');
-                    localStorage.removeItem('adminUsername');
-                    window.location.href = 'login.html';
-                    return;
-                }
                 alert('Sıra değiştirme işlemi başarısız oldu.');
             }
         });

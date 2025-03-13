@@ -143,7 +143,7 @@ router.delete('/images/:id', protect, admin, async (req, res) => {
 });
 
 // Resim sırasını güncelle
-router.put('/images/:id/order', protect, async (req, res) => {
+router.put('/images/:id/order', protect, admin, async (req, res) => {
     try {
         const { order } = req.body;
         const image = await Image.findById(req.params.id);
@@ -152,11 +152,13 @@ router.put('/images/:id/order', protect, async (req, res) => {
             return res.status(404).json({ message: 'Resim bulunamadı' });
         }
 
+        // Sıra numarasını güncelle
         image.order = order;
         await image.save();
 
-        res.json({ message: 'Resim sırası güncellendi' });
+        res.json({ message: 'Resim sırası güncellendi', image });
     } catch (error) {
+        console.error('Sıra güncelleme hatası:', error);
         res.status(500).json({ message: error.message });
     }
 });
