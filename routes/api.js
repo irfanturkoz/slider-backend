@@ -152,11 +152,30 @@ router.put('/images/:id/order', protect, admin, async (req, res) => {
             return res.status(404).json({ message: 'Resim bulunamadı' });
         }
 
-        // Sıra numarasını güncelle
+        // Tüm resimleri getir
+        const images = await Image.find();
+        
+        // Mevcut resmin sırası değiştirildiğinde diğer resimlerin sıralarını güncelle
+        for (let img of images) {
+            if (img._id.toString() !== req.params.id) {
+                if (order > image.order && img.order > image.order && img.order <= order) {
+                    // Resim yukarı taşınıyorsa, aradaki resimleri bir aşağı kaydır
+                    img.order = img.order - 1;
+                } else if (order < image.order && img.order < image.order && img.order >= order) {
+                    // Resim aşağı taşınıyorsa, aradaki resimleri bir yukarı kaydır
+                    img.order = img.order + 1;
+                }
+                await img.save();
+            }
+        }
+
+        // Seçilen resmin sırasını güncelle
         image.order = order;
         await image.save();
 
-        res.json({ message: 'Resim sırası güncellendi', image });
+        // Güncellenmiş resim listesini döndür
+        const updatedImages = await Image.find().sort({ order: 1 });
+        res.json({ message: 'Resim sırası güncellendi', images: updatedImages });
     } catch (error) {
         console.error('Sıra güncelleme hatası:', error);
         res.status(500).json({ message: error.message });

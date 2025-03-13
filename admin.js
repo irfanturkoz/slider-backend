@@ -370,42 +370,25 @@ $(document).ready(function () {
         const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
         if (newIndex < 0 || newIndex >= resimler.length) return;
 
-        // Sıraları değiştir
-        const temp = resimler[currentIndex];
-        resimler[currentIndex] = resimler[newIndex];
-        resimler[newIndex] = temp;
-
-        // Her iki resmin sıra numaralarını güncelle
-        const currentOrder = resimler[currentIndex].order;
+        // Yeni sıra numarasını belirle
         const newOrder = resimler[newIndex].order;
 
-        // API'ye ilk resmin güncellemesini gönder
+        // API'ye gönder
         $.ajax({
-            url: `${API_URL}/images/${resimler[currentIndex]._id}/order`,
+            url: `${API_URL}/images/${id}/order`,
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`
             },
             contentType: 'application/json',
             data: JSON.stringify({ order: newOrder }),
-            success: function() {
-                // API'ye ikinci resmin güncellemesini gönder
-                $.ajax({
-                    url: `${API_URL}/images/${resimler[newIndex]._id}/order`,
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                    contentType: 'application/json',
-                    data: JSON.stringify({ order: currentOrder }),
-                    success: function() {
-                        resimleriGetir(); // Listeyi yenile
-                    },
-                    error: function(err) {
-                        console.error('Sıra değiştirme hatası:', err);
-                        alert('Sıra değiştirme işlemi başarısız oldu.');
-                    }
-                });
+            success: function(response) {
+                if (response.images) {
+                    resimler = response.images;
+                    resimleriListele();
+                } else {
+                    resimleriGetir(); // Yedek çözüm
+                }
             },
             error: function(err) {
                 console.error('Sıra değiştirme hatası:', err);
