@@ -227,12 +227,13 @@ router.post('/images', protect, admin, upload.single('image'), async (req, res) 
             console.log('Kaydedilecek dosya yolu:', url); // Debug için log
             console.log('UYARI: Render.com yeniden başlatıldığında bu dosya kaybolacak!');
             
-            // Kullanıcıya uyarı mesajı ekle
-            return res.status(201).json({ 
-                message: 'Resim geçici olarak eklendi, ancak Render.com yeniden başlatıldığında kaybolacak. Lütfen bunun yerine URL kullanın.', 
-                image: { url, order: 1 },
-                images: await Image.find().sort({ order: 1 })
-            });
+            // Dosyanın varlığını kontrol et
+            const filePath = path.join('public', 'uploads', req.file.filename);
+            if (fs.existsSync(filePath)) {
+                console.log('Dosya başarıyla kaydedildi:', filePath);
+            } else {
+                console.error('Dosya kaydedilemedi:', filePath);
+            }
         } 
         // URL gönderildiyse
         else if (req.body.url) {
@@ -260,8 +261,17 @@ router.post('/images', protect, admin, upload.single('image'), async (req, res) 
         const savedImage = await newImage.save();
         console.log('Kaydedilen resim:', JSON.stringify(savedImage, null, 2)); // Detaylı log
         
+        // Veritabanında resmin kaydedildiğini doğrula
+        const checkImage = await Image.findById(savedImage._id);
+        if (checkImage) {
+            console.log('Resim veritabanında doğrulandı:', JSON.stringify(checkImage, null, 2));
+        } else {
+            console.error('Resim veritabanında bulunamadı!');
+        }
+        
         // Güncellenmiş resim listesini döndür
         const updatedImages = await Image.find().sort({ order: 1 });
+        console.log('Güncellenmiş resim listesi:', JSON.stringify(updatedImages, null, 2));
         
         // Resimlerin URL'lerini kontrol et ve düzelt
         const processedImages = updatedImages.map(img => {
@@ -276,14 +286,29 @@ router.post('/images', protect, admin, upload.single('image'), async (req, res) 
             return image;
         });
         
-        res.status(201).json({ message: 'Resim eklendi', image: savedImage, images: processedImages });
+        // LocalStorage için resimleri kaydet
+        res.status(201).json({ 
+            message: 'Resim başarıyla eklendi', 
+            image: savedImage, 
+            images: processedImages,
+            success: true
+        });
     } catch (error) {
         console.error('Resim ekleme hatası:', error); // Debug için log
         // Hata durumunda yüklenen dosyayı sil
         if (req.file) {
-            fs.unlinkSync(path.join('public', 'uploads', req.file.filename));
+            try {
+                fs.unlinkSync(path.join('public', 'uploads', req.file.filename));
+                console.log('Hata nedeniyle dosya silindi');
+            } catch (unlinkError) {
+                console.error('Dosya silinirken hata oluştu:', unlinkError);
+            }
         }
-        res.status(500).json({ message: error.message, stack: error.stack });
+        res.status(500).json({ 
+            message: error.message, 
+            stack: error.stack,
+            success: false
+        });
     }
 });
 
