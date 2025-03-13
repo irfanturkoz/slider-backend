@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Girişi</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container {
+            max-width: 400px;
+            width: 100%;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .login-logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .login-logo h1 {
+            color: #333;
+            font-size: 28px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            width: 100%;
+        }
+        .alert {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-logo">
+            <h1>Admin Girişi</h1>
+        </div>
+        <div class="alert alert-danger" id="errorAlert" role="alert">
+            Kullanıcı adı veya şifre hatalı!
+        </div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Kullanıcı Adı</label>
+                <input type="text" class="form-control" id="username" placeholder="Kullanıcı adınızı girin" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Şifre</label>
+                <input type="password" class="form-control" id="password" placeholder="Şifrenizi girin" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Giriş Yap</button>
+        </form>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Sayfa yüklendiğinde token kontrolü yap
+            const token = localStorage.getItem('adminToken');
+            if (token) {
+                // Token varsa admin sayfasına yönlendir
+                window.location.href = 'admin.html';
+            }
+
+            // Giriş formu gönderildiğinde
+            $('#loginForm').submit(function(e) {
+                e.preventDefault();
+                
+                const username = $('#username').val();
+                const password = $('#password').val();
+                
+                console.log('Giriş denemesi:', { username, password });
+                
+                // API'ye giriş isteği gönder
+                $.ajax({
+                    url: 'http://localhost:3000/api/auth/login',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ username, password }),
+                    success: function(response) {
+                        console.log('Başarılı giriş:', response);
+                        // Token'ı localStorage'a kaydet
+                        localStorage.setItem('adminToken', response.token);
+                        localStorage.setItem('adminUsername', response.username);
+                        
+                        // Admin sayfasına yönlendir
+                        window.location.href = 'admin.html';
+                    },
+                    error: function(err) {
+                        console.error('Giriş hatası:', err);
+                        // Hata detaylarını göster
+                        if (err.responseJSON && err.responseJSON.message) {
+                            $('#errorAlert').text(err.responseJSON.message).show();
+                        } else {
+                            $('#errorAlert').text('Giriş yapılamadı. Lütfen tekrar deneyin.').show();
+                        }
+                        
+                        setTimeout(function() {
+                            $('#errorAlert').hide();
+                        }, 3000);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html> 
