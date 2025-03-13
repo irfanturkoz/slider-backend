@@ -301,11 +301,18 @@ $(document).ready(function () {
 
     // Resimleri API'den çek
     function resimleriGetir() {
+        console.log('Resimler getiriliyor...');
         $.ajax({
             url: `${API_URL}/images`,
             method: 'GET',
             success: function(data) {
+                console.log('Resimler başarıyla alındı:', data);
                 resimler = data;
+                
+                // LocalStorage'a kaydet
+                localStorage.setItem('sliderResimleri', JSON.stringify(resimler));
+                
+                // Resimleri listele
                 resimleriListele();
             },
             error: function(err) {
@@ -316,7 +323,16 @@ $(document).ready(function () {
                     window.location.href = 'login.html';
                     return;
                 }
-                alert('Resimler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.');
+                
+                // LocalStorage'dan resimleri yüklemeyi dene
+                const cachedImages = localStorage.getItem('sliderResimleri');
+                if (cachedImages) {
+                    console.log('Resimler LocalStorage\'dan yükleniyor...');
+                    resimler = JSON.parse(cachedImages);
+                    resimleriListele();
+                } else {
+                    alert('Resimler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.');
+                }
             }
         });
     }
@@ -409,14 +425,24 @@ $(document).ready(function () {
             return;
         }
         
+        // Yükleme başladı mesajı
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yükleniyor...';
+        
         try {
             let response;
             
             if (imageFile) {
                 // Dosya yükleme - kullanıcıya uyarı göster
                 if (!confirm('UYARI: Dosya yüklemeleri Render.com\'da kalıcı değildir. Her yeni dağıtımda (deploy) yüklenen dosyalar kaybolacaktır. Devam etmek istiyor musunuz? (Bunun yerine URL kullanmanızı öneririz)')) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
                     return;
                 }
+                
+                console.log('Dosya yükleniyor:', imageFile.name);
                 
                 // Dosya yükleme
                 formData.append('image', imageFile);
@@ -428,6 +454,8 @@ $(document).ready(function () {
                     body: formData
                 });
             } else {
+                console.log('URL ekleniyor:', imageUrl);
+                
                 // URL ile ekleme
                 response = await fetch(`${API_URL}/images`, {
                     method: 'POST',
@@ -439,13 +467,13 @@ $(document).ready(function () {
                 });
             }
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Resim eklenirken bir hata oluştu');
+            const data = await response.json();
+            console.log('API yanıtı:', data);
+            
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Resim eklenirken bir hata oluştu');
             }
 
-            const data = await response.json();
-            
             // Eğer uyarı mesajı varsa göster
             if (data.message.includes('geçici')) {
                 alert(data.message);
@@ -457,10 +485,24 @@ $(document).ready(function () {
             document.getElementById('resimForm').reset();
             
             // Resimleri yeniden listele
-            resimleriGetir();
+            if (data.images && data.images.length > 0) {
+                console.log('Yeni resim listesi alındı:', data.images);
+                resimler = data.images;
+                resimleriListele();
+                
+                // LocalStorage'a kaydet
+                localStorage.setItem('sliderResimleri', JSON.stringify(resimler));
+            } else {
+                console.log('Resimler yeniden getiriliyor...');
+                resimleriGetir();
+            }
         } catch (error) {
             console.error('Hata:', error);
             alert('Resim eklenirken bir hata oluştu: ' + error.message);
+        } finally {
+            // Buton durumunu geri al
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
         }
     });
 

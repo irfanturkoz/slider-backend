@@ -86,24 +86,33 @@
         
         // Resimleri API'den çek
         function resimleriGetir() {
+            console.log('Resimler getiriliyor...');
             $.ajax({
                 url: `${API_URL}/images`,
                 method: 'GET',
                 success: function(data) {
+                    console.log('Resimler başarıyla alındı:', data);
+                    // Resimleri LocalStorage'a kaydet
+                    localStorage.setItem('sliderResimleri', JSON.stringify(data));
                     resimleriGoster(data);
                 },
                 error: function(err) {
                     console.error('Resimler yüklenirken hata oluştu:', err);
                     // Hata durumunda LocalStorage'dan yükle
-                    const resimler = JSON.parse(localStorage.getItem('sliderResimleri')) || [
-                        { url: "kedi.jpg" },
-                        { url: "4.jpg" },
-                        { url: "6.jpg" },
-                        { url: "resim1.jpg" },
-                        { url: "resim2.jpg" },
-                        { url: "resim3.jpg" }
-                    ];
-                    resimleriGoster(resimler);
+                    const cachedImages = localStorage.getItem('sliderResimleri');
+                    if (cachedImages) {
+                        console.log('Resimler LocalStorage\'dan yükleniyor...');
+                        const resimler = JSON.parse(cachedImages);
+                        resimleriGoster(resimler);
+                    } else {
+                        console.log('LocalStorage\'da resim bulunamadı, varsayılan resimleri gösteriyorum...');
+                        const resimler = [
+                            { url: "https://via.placeholder.com/1200x800.png?text=Resim+1", order: 1 },
+                            { url: "https://via.placeholder.com/1200x800.png?text=Resim+2", order: 2 },
+                            { url: "https://via.placeholder.com/1200x800.png?text=Resim+3", order: 3 }
+                        ];
+                        resimleriGoster(resimler);
+                    }
                 }
             });
         }
