@@ -100,17 +100,18 @@ router.post('/images', protect, admin, async (req, res) => {
       return res.status(400).json({ message: 'Resim URL\'si gereklidir' });
     }
     
-    // Mevcut resimleri say
-    const count = await Image.countDocuments();
+    // Mevcut resimleri getir ve en yüksek sıra numarasını bul
+    const images = await Image.find().sort({ order: -1 });
+    const maxOrder = images.length > 0 ? images[0].order : -1;
     
     // Yeni resim oluştur
     const newImage = new Image({
       url,
-      order: count // Yeni resim en sona eklenecek
+      order: maxOrder + 1 // En son resimden bir fazla sıra numarası ver
     });
     
     // Maksimum 6 resim olacak şekilde kontrol et
-    if (count >= 6) {
+    if (images.length >= 6) {
       // En eski resmi bul ve sil
       const oldestImage = await Image.findOne().sort({ createdAt: 1 });
       if (oldestImage) {
@@ -120,7 +121,10 @@ router.post('/images', protect, admin, async (req, res) => {
     
     // Yeni resmi kaydet
     const savedImage = await newImage.save();
-    res.status(201).json(savedImage);
+    
+    // Güncellenmiş resim listesini döndür
+    const updatedImages = await Image.find().sort({ order: 1 });
+    res.status(201).json({ message: 'Resim eklendi', image: savedImage, images: updatedImages });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -138,6 +142,47 @@ router.delete('/images/:id', protect, admin, async (req, res) => {
     await Image.findByIdAndDelete(req.params.id);
     res.json({ message: 'Resim başarıyla silindi' });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Resim sırasını güncelle
+router.put('/images/:id/order', protect, admin, async (req, res) => {
+  try {
+    const { direction } = req.body;
+    const currentImage = await Image.findById(req.params.id);
+    
+    if (!currentImage) {
+      return res.status(404).json({ message: 'Resim bulunamadı' });
+    }
+
+    // Tüm resimleri sıraya göre getir
+    const allImages = await Image.find().sort({ order: 1 });
+    const currentIndex = allImages.findIndex(img => img._id.toString() === req.params.id);
+
+    if (direction === 'up' && currentIndex > 0) {
+      // Yukarı taşıma
+      const prevImage = allImages[currentIndex - 1];
+      const tempOrder = currentImage.order;
+      currentImage.order = prevImage.order;
+      prevImage.order = tempOrder;
+      await prevImage.save();
+      await currentImage.save();
+    } else if (direction === 'down' && currentIndex < allImages.length - 1) {
+      // Aşağı taşıma
+      const nextImage = allImages[currentIndex + 1];
+      const tempOrder = currentImage.order;
+      currentImage.order = nextImage.order;
+      nextImage.order = tempOrder;
+      await nextImage.save();
+      await currentImage.save();
+    }
+
+    // Güncellenmiş resim listesini döndür
+    const updatedImages = await Image.find().sort({ order: 1 });
+    res.json({ message: 'Sıralama güncellendi', images: updatedImages });
+  } catch (error) {
+    console.error('Sıralama hatası:', error);
     res.status(500).json({ message: error.message });
   }
 });
