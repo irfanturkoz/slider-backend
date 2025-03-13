@@ -336,57 +336,84 @@ $(document).ready(function () {
 
     // Resimleri listeleme fonksiyonu
     function resimleriListele() {
-        let html = "";
-        // Resimleri sıraya göre sırala
-        resimler.sort((a, b) => (a.order || 0) - (b.order || 0));
-        
+        const container = $('#resimListesi');
+        container.empty();
+
         resimler.forEach((resim, index) => {
-            html += `
-                <tr>
-                    <td>
-                        <div class="btn-group">
-                            <button class="btn btn-danger btn-sm" onclick="resimSil('${resim._id}')">Sil</button>
-                            <button class="btn btn-primary btn-sm" onclick="sirayiDegistir('${resim._id}', 'up')" ${index === 0 ? 'disabled' : ''}>↑</button>
-                            <button class="btn btn-primary btn-sm" onclick="sirayiDegistir('${resim._id}', 'down')" ${index === resimler.length - 1 ? 'disabled' : ''}>↓</button>
-                        </div>
-                    </td>
-                    <td>${index + 1}</td>
-                    <td><img src="${resim.url}" alt="Resim ${index + 1}" class="img-thumbnail" style="max-height: 100px;"></td>
-                    <td>${resim.url}</td>
-                </tr>
-            `;
+            const card = $('<div>').addClass('card mb-3');
+            const row = $('<div>').addClass('row g-0');
+            const imgCol = $('<div>').addClass('col-md-4');
+            const bodyCol = $('<div>').addClass('col-md-8');
+
+            const img = $('<img>')
+                .addClass('img-fluid rounded-start')
+                .attr('src', resim.url)
+                .attr('alt', 'Slider Resmi');
+
+            const cardBody = $('<div>').addClass('card-body');
+            const buttonGroup = $('<div>').addClass('btn-group');
+
+            // Yukarı taşıma butonu
+            if (index > 0) {
+                buttonGroup.append(
+                    $('<button>')
+                        .addClass('btn btn-primary')
+                        .html('<i class="fas fa-arrow-up"></i>')
+                        .on('click', () => sirayiDegistir(resim._id, 'up'))
+                );
+            }
+
+            // Aşağı taşıma butonu
+            if (index < resimler.length - 1) {
+                buttonGroup.append(
+                    $('<button>')
+                        .addClass('btn btn-primary')
+                        .html('<i class="fas fa-arrow-down"></i>')
+                        .on('click', () => sirayiDegistir(resim._id, 'down'))
+                );
+            }
+
+            // Silme butonu
+            buttonGroup.append(
+                $('<button>')
+                    .addClass('btn btn-danger')
+                    .html('<i class="fas fa-trash"></i>')
+                    .on('click', () => resimSil(resim._id))
+            );
+
+            cardBody.append(buttonGroup);
+            imgCol.append(img);
+            bodyCol.append(cardBody);
+            row.append(imgCol, bodyCol);
+            card.append(row);
+            container.append(card);
         });
-        $("#resimListesi").html(html);
         
         // Yedek olarak LocalStorage'a da kaydet
         localStorage.setItem('sliderResimleri', JSON.stringify(resimler));
     }
 
     // Sıra değiştirme fonksiyonu
-    window.sirayiDegistir = function(id, direction) {
-        // API'ye gönder
+    function sirayiDegistir(id, direction) {
         $.ajax({
-            url: `${API_URL}/images/${id}/order`,
-            method: 'PUT',
+            url: `/api/images/${id}/order`,
+            type: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`
             },
-            contentType: 'application/json',
-            data: JSON.stringify({ direction: direction }), // 'up' veya 'down'
+            data: { direction },
             success: function(response) {
                 if (response.images) {
                     resimler = response.images;
                     resimleriListele();
-                } else {
-                    resimleriGetir(); // Yedek çözüm
                 }
             },
-            error: function(err) {
-                console.error('Sıra değiştirme hatası:', err);
-                alert('Sıra değiştirme işlemi başarısız oldu.');
+            error: function(xhr) {
+                const hata = xhr.responseJSON ? xhr.responseJSON.message : 'Bir hata oluştu';
+                alert('Sıralama hatası: ' + hata);
             }
         });
-    };
+    }
 
     // Resim ekleme fonksiyonu
     $("#resimEkleForm").submit(function (e) {

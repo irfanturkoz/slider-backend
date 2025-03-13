@@ -99,25 +99,18 @@
             </div>
         </div>
 
-        <!-- Resim Ekleme Formu -->
+        <!-- Resim Yükleme Formu -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5>Yeni Resim Ekle</h5>
+                <h5 class="mb-0">Yeni Resim Ekle</h5>
             </div>
             <div class="card-body">
-                <form id="resimEkleForm">
-                    <!-- URL ile Resim Ekleme -->
-                    <div class="form-group">
-                        <label for="resimUrl">Resim URL</label>
-                        <input type="text" class="form-control" id="resimUrl" placeholder="Resim URL'sini girin">
+                <form id="resimForm" class="mb-3">
+                    <div class="mb-3">
+                        <label for="resimUrl" class="form-label">Resim URL'si</label>
+                        <input type="text" class="form-control" id="resimUrl" required>
                     </div>
-                    <p class="text-center"><strong>VEYA</strong></p>
-                    <!-- Dosya Yükleme ile Resim Ekleme -->
-                    <div class="form-group">
-                        <label for="resimDosya">Bilgisayardan Resim Yükle</label>
-                        <input type="file" class="form-control-file" id="resimDosya" accept="image/*">
-                    </div>
-                    <button type="submit" class="btn btn-primary">Resmi Ekle</button>
+                    <button type="submit" class="btn btn-primary">Resim Ekle</button>
                 </form>
             </div>
         </div>
@@ -125,22 +118,12 @@
         <!-- Resim Listesi -->
         <div class="card">
             <div class="card-header">
-                <h5>Slider Resimleri</h5>
+                <h5 class="mb-0">Mevcut Resimler</h5>
             </div>
             <div class="card-body">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>İşlemler</th>
-                            <th>Sıra</th>
-                            <th>Resim</th>
-                            <th>URL</th>
-                        </tr>
-                    </thead>
-                    <tbody id="resimListesi">
-                        <!-- Resimler burada listelenecek -->
-                    </tbody>
-                </table>
+                <div id="resimListesi" class="row">
+                    <!-- Resimler buraya dinamik olarak eklenecek -->
+                </div>
             </div>
         </div>
 
