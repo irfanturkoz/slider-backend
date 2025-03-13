@@ -198,8 +198,10 @@ router.post('/images', protect, admin, upload.single('image'), async (req, res) 
         
         // Dosya yüklendiyse
         if (req.file) {
-            // Tam URL oluştur - doğrudan /uploads/ yolunu kullan
-            url = `/uploads/${req.file.filename}`;
+            // Tam URL oluştur - backend URL'sini kullanarak
+            const backendUrl = process.env.BACKEND_URL || 'https://slider-backend.onrender.com';
+            url = `${backendUrl}/uploads/${req.file.filename}`;
+            console.log('Oluşturulan resim URL:', url); // Debug için log
         } 
         // URL gönderildiyse
         else if (req.body.url) {

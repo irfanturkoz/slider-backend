@@ -9,12 +9,19 @@ require('dotenv').config();
 
 const app = express();
 
+// CORS ayarlarını genişlet
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
-app.use(cors());
 
 // Statik dosyalar için public klasörünü kullan
 app.use(express.static(path.join(__dirname, 'public')));
-// Uploads klasörüne doğrudan erişim sağla
+
+// Uploads klasörüne doğrudan erişim sağla - bu kısmı özellikle düzenliyoruz
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // API rotalarını kullan
