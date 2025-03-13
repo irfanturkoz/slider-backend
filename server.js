@@ -17,25 +17,27 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // CORS ayarları
-const allowedOrigins = [
-  'http://localhost:8080',
-  'http://localhost:3000',
-  'https://dizifilmpal.com'
-];
+const corsOptions = {
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'http://localhost',
+            'https://dizifilmpal.com',
+            'http://dizifilmpal.com'
+        ];
+        
+        // origin null olabilir (örneğin Postman'den gelen istekler için)
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('CORS policy violation'));
+        }
+    },
+    credentials: true,
+    optionsSuccessStatus: 200
+};
 
-// Middleware
-app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS policy violation'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Content-Length', 'X-Requested-With', 'Accept']
-}));
+app.use(cors(corsOptions));
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
@@ -64,5 +66,5 @@ app.use((req, res) => {
 // Server'ı başlat
 app.listen(PORT, () => {
   console.log(`Server ${PORT} portunda çalışıyor`);
-  console.log('İzin verilen originler:', allowedOrigins);
+  console.log('İzin verilen originler:', corsOptions.origin);
 }); 
