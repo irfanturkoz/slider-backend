@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>0danbaşla API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .endpoint {
+            background-color: #f4f4f4;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .method {
+            font-weight: bold;
+            display: inline-block;
+            width: 80px;
+        }
+        .get { color: #2196F3; }
+        .post { color: #4CAF50; }
+        .put { color: #FF9800; }
+        .delete { color: #F44336; }
+    </style>
+</head>
+<body>
+    <h1>0danbaşla API Dokümantasyonu</h1>
+    <p>Bu API, 0danbaşla uygulaması için RESTful servisler sağlar.</p>
+    
+    <h2>Kullanılabilir Endpointler</h2>
+    
+    <div class="endpoint">
+        <div><span class="method get">GET</span> /api/items</div>
+        <p>Tüm öğeleri listeler.</p>
+    </div>
+    
+    <div class="endpoint">
+        <div><span class="method get">GET</span> /api/items/:id</div>
+        <p>Belirli bir öğeyi ID'ye göre getirir.</p>
+    </div>
+    
+    <div class="endpoint">
+        <div><span class="method post">POST</span> /api/items</div>
+        <p>Yeni bir öğe ekler.</p>
+        <pre>
+{
+  "name": "Ürün Adı",
+  "description": "Ürün Açıklaması",
+  "price": 150
+}
+        </pre>
+    </div>
+    
+    <div class="endpoint">
+        <div><span class="method put">PUT</span> /api/items/:id</div>
+        <p>Bir öğeyi günceller.</p>
+        <pre>
+{
+  "name": "Yeni Ürün Adı",
+  "description": "Yeni Ürün Açıklaması",
+  "price": 200
+}
+        </pre>
+    </div>
+    
+    <div class="endpoint">
+        <div><span class="method delete">DELETE</span> /api/items/:id</div>
+        <p>Bir öğeyi siler.</p>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 0danbaşla. Tüm hakları saklıdır.</p>
+    </footer>
+</body>
+</html> 
