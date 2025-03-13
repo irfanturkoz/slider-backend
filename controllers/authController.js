@@ -21,21 +21,6 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Bu kullanıcı adı zaten kullanılıyor' });
     }
 
-    // Yetki kontrolü
-    if (!req.user) {
-      return res.status(403).json({ message: 'Kullanıcı ekleme yetkiniz yok' });
-    }
-
-    // Admin yetkisi kontrolü
-    if (isAdmin && !req.user.isAdmin && !req.user.isSuperAdmin) {
-      return res.status(403).json({ message: 'Admin yetkisi verme yetkiniz yok' });
-    }
-
-    // Süper admin yetkisi kontrolü
-    if (isSuperAdmin && !req.user.isSuperAdmin) {
-      return res.status(403).json({ message: 'Süper admin yetkisi verme yetkiniz yok' });
-    }
-
     // Yeni kullanıcı oluştur
     const user = await User.create({
       username,

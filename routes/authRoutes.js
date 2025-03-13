@@ -3,8 +3,8 @@ const router = express.Router();
 const { register, login, getProfile, logout, changePassword, deleteUser, getUsers } = require('../controllers/authController');
 const { protect, admin } = require('../middleware/auth');
 
-// Kullanıcı kaydı (sadece adminler)
-router.post('/register', protect, admin, register);
+// Kullanıcı kaydı (geçici olarak public)
+router.post('/register', register);
 
 // Kullanıcı girişi
 router.post('/login', login);
