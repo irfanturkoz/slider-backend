@@ -413,6 +413,11 @@ $(document).ready(function () {
             let response;
             
             if (imageFile) {
+                // Dosya yükleme - kullanıcıya uyarı göster
+                if (!confirm('UYARI: Dosya yüklemeleri Render.com\'da kalıcı değildir. Her yeni dağıtımda (deploy) yüklenen dosyalar kaybolacaktır. Devam etmek istiyor musunuz? (Bunun yerine URL kullanmanızı öneririz)')) {
+                    return;
+                }
+                
                 // Dosya yükleme
                 formData.append('image', imageFile);
                 response = await fetch(`${API_URL}/images`, {
@@ -440,7 +445,13 @@ $(document).ready(function () {
             }
 
             const data = await response.json();
-            alert('Resim başarıyla eklendi');
+            
+            // Eğer uyarı mesajı varsa göster
+            if (data.message.includes('geçici')) {
+                alert(data.message);
+            } else {
+                alert('Resim başarıyla eklendi');
+            }
             
             // Formu temizle
             document.getElementById('resimForm').reset();
