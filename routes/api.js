@@ -145,35 +145,37 @@ router.delete('/images/:id', protect, admin, async (req, res) => {
 // Resim sırasını güncelle
 router.put('/images/:id/order', protect, admin, async (req, res) => {
     try {
-        const { order } = req.body;
-        const image = await Image.findById(req.params.id);
+        const { direction } = req.body; // 'up' veya 'down'
+        const currentImage = await Image.findById(req.params.id);
         
-        if (!image) {
+        if (!currentImage) {
             return res.status(404).json({ message: 'Resim bulunamadı' });
         }
 
-        // Tüm resimleri getir
-        const images = await Image.find();
+        // Tüm resimleri sıraya göre getir
+        const allImages = await Image.find().sort({ order: 1 });
+        const currentIndex = allImages.findIndex(img => img._id.toString() === req.params.id);
         
-        // Mevcut resmin sırası değiştirildiğinde diğer resimlerin sıralarını güncelle
-        for (let img of images) {
-            if (img._id.toString() !== req.params.id) {
-                if (order > image.order && img.order > image.order && img.order <= order) {
-                    // Resim yukarı taşınıyorsa, aradaki resimleri bir aşağı kaydır
-                    img.order = img.order - 1;
-                } else if (order < image.order && img.order < image.order && img.order >= order) {
-                    // Resim aşağı taşınıyorsa, aradaki resimleri bir yukarı kaydır
-                    img.order = img.order + 1;
-                }
-                await img.save();
-            }
+        if (direction === 'up' && currentIndex > 0) {
+            // Bir üstteki resimle yer değiştir
+            const prevImage = allImages[currentIndex - 1];
+            const tempOrder = currentImage.order;
+            currentImage.order = prevImage.order;
+            prevImage.order = tempOrder;
+            await prevImage.save();
+            await currentImage.save();
+        } 
+        else if (direction === 'down' && currentIndex < allImages.length - 1) {
+            // Bir alttaki resimle yer değiştir
+            const nextImage = allImages[currentIndex + 1];
+            const tempOrder = currentImage.order;
+            currentImage.order = nextImage.order;
+            nextImage.order = tempOrder;
+            await nextImage.save();
+            await currentImage.save();
         }
 
-        // Seçilen resmin sırasını güncelle
-        image.order = order;
-        await image.save();
-
-        // Güncellenmiş resim listesini döndür
+        // Güncellenmiş listeyi döndür
         const updatedImages = await Image.find().sort({ order: 1 });
         res.json({ message: 'Resim sırası güncellendi', images: updatedImages });
     } catch (error) {

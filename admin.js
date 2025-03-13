@@ -364,15 +364,6 @@ $(document).ready(function () {
 
     // Sıra değiştirme fonksiyonu
     window.sirayiDegistir = function(id, direction) {
-        const currentIndex = resimler.findIndex(r => r._id === id);
-        if (currentIndex === -1) return;
-
-        const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-        if (newIndex < 0 || newIndex >= resimler.length) return;
-
-        // Yeni sıra numarasını belirle
-        const newOrder = resimler[newIndex].order;
-
         // API'ye gönder
         $.ajax({
             url: `${API_URL}/images/${id}/order`,
@@ -381,7 +372,7 @@ $(document).ready(function () {
                 'Authorization': `Bearer ${token}`
             },
             contentType: 'application/json',
-            data: JSON.stringify({ order: newOrder }),
+            data: JSON.stringify({ direction: direction }), // 'up' veya 'down'
             success: function(response) {
                 if (response.images) {
                     resimler = response.images;
