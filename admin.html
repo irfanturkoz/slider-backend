@@ -6,6 +6,8 @@
     <title>Admin Paneli</title>
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <!-- Admin CSS -->
     <link rel="stylesheet" href="admin.css">
 </head>
@@ -18,84 +20,6 @@
                 <button id="addUserBtn" class="btn btn-outline-success mr-2">Yeni Kullanıcı Ekle</button>
                 <button id="changePasswordBtn" class="btn btn-outline-primary mr-2">Şifre Değiştir</button>
                 <button id="logoutBtn" class="btn btn-outline-danger">Çıkış Yap</button>
-            </div>
-        </div>
-        <hr>
-
-        <!-- Şifre Değiştirme Modalı -->
-        <div class="modal fade" id="changePasswordModal" tabindex="-1" role="dialog" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="changePasswordModalLabel">Şifre Değiştir</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="alert alert-danger" id="passwordErrorAlert" style="display: none;"></div>
-                        <div class="alert alert-success" id="passwordSuccessAlert" style="display: none;"></div>
-                        <form id="changePasswordForm">
-                            <div class="form-group">
-                                <label for="currentPassword">Mevcut Şifre</label>
-                                <input type="password" class="form-control" id="currentPassword" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="newPassword">Yeni Şifre</label>
-                                <input type="password" class="form-control" id="newPassword" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="confirmPassword">Yeni Şifre (Tekrar)</label>
-                                <input type="password" class="form-control" id="confirmPassword" required>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
-                        <button type="button" class="btn btn-primary" id="savePasswordBtn">Kaydet</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Kullanıcı Ekleme Modalı -->
-        <div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-labelledby="addUserModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addUserModalLabel">Yeni Kullanıcı Ekle</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="alert alert-danger" id="userErrorAlert" style="display: none;"></div>
-                        <div class="alert alert-success" id="userSuccessAlert" style="display: none;"></div>
-                        <form id="kullaniciEkleForm">
-                            <div class="form-group">
-                                <label for="newUsername">Kullanıcı Adı</label>
-                                <input type="text" class="form-control" id="newUsername" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="newUserPassword">Şifre</label>
-                                <input type="password" class="form-control" id="newUserPassword" required>
-                            </div>
-                            <div class="form-check mb-3">
-                                <input type="checkbox" class="form-check-input" id="isAdmin">
-                                <label class="form-check-label" for="isAdmin">Admin Yetkisi Ver</label>
-                            </div>
-                            <div class="form-check mb-3" id="superAdminCheckboxContainer" style="display: none;">
-                                <input type="checkbox" class="form-check-input" id="isSuperAdmin">
-                                <label class="form-check-label" for="isSuperAdmin">Süper Admin Yetkisi Ver</label>
-                                <small class="form-text text-muted">Not: Bu seçenek sadece süper adminler tarafından görülebilir ve kullanılabilir.</small>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
-                        <button type="button" class="btn btn-primary" id="saveUserBtn">Kullanıcı Ekle</button>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -116,26 +40,26 @@
         </div>
 
         <!-- Resim Listesi -->
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Mevcut Resimler</h5>
             </div>
             <div class="card-body">
-                <div id="resimListesi" class="row">
+                <div id="resimListesi">
                     <!-- Resimler buraya dinamik olarak eklenecek -->
                 </div>
             </div>
         </div>
 
         <!-- Kullanıcı Listesi -->
-        <div class="card mt-4">
+        <div class="card">
             <div class="card-header">
-                <h5>Kullanıcı Listesi</h5>
-                    </div>
+                <h5 class="mb-0">Kullanıcı Listesi</h5>
+            </div>
             <div class="card-body">
                 <div class="alert alert-danger" id="userListErrorAlert" style="display: none;"></div>
                 <div class="alert alert-success" id="userListSuccessAlert" style="display: none;"></div>
-                <table class="table table-striped">
+                <table class="table">
                     <thead>
                         <tr>
                             <th>İşlemler</th>
@@ -148,6 +72,84 @@
                         <!-- Kullanıcılar burada listelenecek -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modaller -->
+    <!-- Şifre Değiştirme Modalı -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Şifre Değiştir</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" id="passwordErrorAlert" style="display: none;"></div>
+                    <div class="alert alert-success" id="passwordSuccessAlert" style="display: none;"></div>
+                    <form id="changePasswordForm">
+                        <div class="form-group">
+                            <label>Mevcut Şifre</label>
+                            <input type="password" class="form-control" id="currentPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Yeni Şifre</label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Yeni Şifre (Tekrar)</label>
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-primary" id="savePasswordBtn">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kullanıcı Ekleme Modalı -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Yeni Kullanıcı Ekle</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" id="userErrorAlert" style="display: none;"></div>
+                    <div class="alert alert-success" id="userSuccessAlert" style="display: none;"></div>
+                    <form id="kullaniciEkleForm">
+                        <div class="form-group">
+                            <label>Kullanıcı Adı</label>
+                            <input type="text" class="form-control" id="newUsername" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Şifre</label>
+                            <input type="password" class="form-control" id="newUserPassword" required>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="isAdmin">
+                            <label class="form-check-label">Admin Yetkisi Ver</label>
+                        </div>
+                        <div class="form-check mb-3" id="superAdminCheckboxContainer" style="display: none;">
+                            <input type="checkbox" class="form-check-input" id="isSuperAdmin">
+                            <label class="form-check-label">Süper Admin Yetkisi Ver</label>
+                            <small class="form-text text-muted">Not: Bu seçenek sadece süper adminler tarafından görülebilir.</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-primary" id="saveUserBtn">Kullanıcı Ekle</button>
+                </div>
             </div>
         </div>
     </div>

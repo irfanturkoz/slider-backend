@@ -339,25 +339,29 @@ $(document).ready(function () {
         const container = $('#resimListesi');
         container.empty();
 
+        const table = $('<table>').addClass('table');
+        const thead = $('<thead>').append(
+            $('<tr>').append(
+                $('<th>').text('İşlemler'),
+                $('<th>').text('Sıra'),
+                $('<th>').text('Resim'),
+                $('<th>').text('URL')
+            )
+        );
+        const tbody = $('<tbody>');
+
         resimler.forEach((resim, index) => {
-            const card = $('<div>').addClass('card mb-3');
-            const row = $('<div>').addClass('row g-0');
-            const imgCol = $('<div>').addClass('col-md-4');
-            const bodyCol = $('<div>').addClass('col-md-8');
-
-            const img = $('<img>')
-                .addClass('img-fluid rounded-start')
-                .attr('src', resim.url)
-                .attr('alt', 'Slider Resmi');
-
-            const cardBody = $('<div>').addClass('card-body');
+            const tr = $('<tr>');
+            
+            // İşlemler hücresi
+            const islemlerTd = $('<td>');
             const buttonGroup = $('<div>').addClass('btn-group');
 
             // Yukarı taşıma butonu
             if (index > 0) {
                 buttonGroup.append(
                     $('<button>')
-                        .addClass('btn btn-primary')
+                        .addClass('btn btn-primary btn-sm')
                         .html('<i class="fas fa-arrow-up"></i>')
                         .on('click', () => sirayiDegistir(resim._id, 'up'))
                 );
@@ -367,7 +371,7 @@ $(document).ready(function () {
             if (index < resimler.length - 1) {
                 buttonGroup.append(
                     $('<button>')
-                        .addClass('btn btn-primary')
+                        .addClass('btn btn-primary btn-sm')
                         .html('<i class="fas fa-arrow-down"></i>')
                         .on('click', () => sirayiDegistir(resim._id, 'down'))
                 );
@@ -376,18 +380,30 @@ $(document).ready(function () {
             // Silme butonu
             buttonGroup.append(
                 $('<button>')
-                    .addClass('btn btn-danger')
+                    .addClass('btn btn-danger btn-sm')
                     .html('<i class="fas fa-trash"></i>')
                     .on('click', () => resimSil(resim._id))
             );
 
-            cardBody.append(buttonGroup);
-            imgCol.append(img);
-            bodyCol.append(cardBody);
-            row.append(imgCol, bodyCol);
-            card.append(row);
-            container.append(card);
+            islemlerTd.append(buttonGroup);
+            
+            // Diğer hücreler
+            const siraTd = $('<td>').text(index + 1);
+            const resimTd = $('<td>').append(
+                $('<img>')
+                    .addClass('img-thumbnail')
+                    .attr('src', resim.url)
+                    .attr('alt', `Resim ${index + 1}`)
+                    .css('max-height', '100px')
+            );
+            const urlTd = $('<td>').text(resim.url);
+
+            tr.append(islemlerTd, siraTd, resimTd, urlTd);
+            tbody.append(tr);
         });
+
+        table.append(thead, tbody);
+        container.append(table);
         
         // Yedek olarak LocalStorage'a da kaydet
         localStorage.setItem('sliderResimleri', JSON.stringify(resimler));
