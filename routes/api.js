@@ -185,45 +185,23 @@ router.delete('/images/:id', protect, admin, async (req, res) => {
   }
 });
 
-// Resim sırasını güncelle
-router.put('/images/:id/order', protect, admin, async (req, res) => {
-  try {
-    const { direction } = req.body;
-    const currentImage = await Image.findById(req.params.id);
-    
-    if (!currentImage) {
-      return res.status(404).json({ message: 'Resim bulunamadı' });
+// Resimleri yeniden sırala
+router.put('/images/reorder', protect, admin, async (req, res) => {
+    try {
+        const { orders } = req.body;
+        
+        // Her bir resmin sırasını güncelle
+        for (const item of orders) {
+            await Image.findByIdAndUpdate(item.id, { order: item.order });
+        }
+        
+        // Güncellenmiş resim listesini döndür
+        const updatedImages = await Image.find().sort({ order: 1 });
+        res.json({ message: 'Sıralama güncellendi', images: updatedImages });
+    } catch (error) {
+        console.error('Sıralama hatası:', error);
+        res.status(500).json({ message: error.message });
     }
-
-    // Tüm resimleri sıraya göre getir
-    const allImages = await Image.find().sort({ order: 1 });
-    const currentIndex = allImages.findIndex(img => img._id.toString() === req.params.id);
-
-    if (direction === 'up' && currentIndex > 0) {
-      // Yukarı taşıma
-      const prevImage = allImages[currentIndex - 1];
-      const tempOrder = currentImage.order;
-      currentImage.order = prevImage.order;
-      prevImage.order = tempOrder;
-      await prevImage.save();
-      await currentImage.save();
-    } else if (direction === 'down' && currentIndex < allImages.length - 1) {
-      // Aşağı taşıma
-      const nextImage = allImages[currentIndex + 1];
-      const tempOrder = currentImage.order;
-      currentImage.order = nextImage.order;
-      nextImage.order = tempOrder;
-      await nextImage.save();
-      await currentImage.save();
-    }
-
-    // Güncellenmiş resim listesini döndür
-    const updatedImages = await Image.find().sort({ order: 1 });
-    res.json({ message: 'Sıralama güncellendi', images: updatedImages });
-  } catch (error) {
-    console.error('Sıralama hatası:', error);
-    res.status(500).json({ message: error.message });
-  }
 });
 
 module.exports = router; 
