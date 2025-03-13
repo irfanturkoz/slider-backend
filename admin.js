@@ -451,34 +451,32 @@ $(document).ready(function () {
     });
 
     // Resim silme fonksiyonu
-    window.resimSil = function (id) {
-        if (id.toString().length > 5) {
-            // MongoDB ID ise API'den sil
+    function resmiSil(id) {
+        if (confirm('Bu resmi silmek istediğinizden emin misiniz?')) {
             $.ajax({
                 url: `${API_URL}/images/${id}`,
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
                 },
-                success: function() {
-                    resimleriGetir(); // Resimleri yeniden yükle
+                success: function(response) {
+                    alert('Resim başarıyla silindi');
+                    resimleriGetir();
                 },
                 error: function(err) {
                     console.error('Resim silinirken hata oluştu:', err);
-                    // Hata 401 (Unauthorized) ise login sayfasına yönlendir
                     if (err.status === 401) {
                         localStorage.removeItem('adminToken');
                         localStorage.removeItem('adminUsername');
                         window.location.href = 'login.html';
                         return;
                     }
-                    alert('Resim silinirken bir hata oluştu. Lütfen tekrar deneyin.');
+                    alert('Resim silinirken bir hata oluştu');
                 }
             });
-        } else {
-            // LocalStorage'dan sil (yedek yöntem)
-            resimler.splice(id, 1);
-            resimleriListele();
         }
-    };
+    }
+
+    // Global scope'a ekle
+    window.resmiSil = resmiSil;
 });
