@@ -149,15 +149,6 @@ router.post('/images', protect, admin, async (req, res) => {
             order: maxOrder + 1 // En son resimden bir fazla sıra numarası ver
         });
         
-        // Maksimum 6 resim olacak şekilde kontrol et
-        if (images.length >= 6) {
-            // En eski resmi bul ve sil
-            const oldestImage = await Image.findOne().sort({ createdAt: 1 });
-            if (oldestImage) {
-                await Image.findByIdAndDelete(oldestImage._id);
-            }
-        }
-        
         // Yeni resmi kaydet
         const savedImage = await newImage.save();
         
