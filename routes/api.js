@@ -2,6 +2,39 @@ const express = require('express');
 const router = express.Router();
 const Image = require('../models/Image');
 const { protect, admin } = require('../middleware/auth');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Multer ayarları
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = 'public/uploads';
+        // Klasör yoksa oluştur
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    fileFilter: function (req, file, cb) {
+        const filetypes = /jpeg|jpg|png|gif/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('Sadece resim dosyaları yüklenebilir!'));
+    }
+});
 
 // Örnek veri
 let items = [
@@ -158,13 +191,20 @@ router.put('/images/reorder', protect, admin, async (req, res) => {
     }
 });
 
-// Yeni resim ekle
-router.post('/images', protect, admin, async (req, res) => {
+// Yeni resim ekle (URL veya dosya yükleme)
+router.post('/images', protect, admin, upload.single('image'), async (req, res) => {
     try {
-        const { url } = req.body;
+        let url;
         
-        if (!url) {
-            return res.status(400).json({ message: 'Resim URL\'si gereklidir' });
+        // Dosya yüklendiyse
+        if (req.file) {
+            url = `/uploads/${req.file.filename}`;
+        } 
+        // URL gönderildiyse
+        else if (req.body.url) {
+            url = req.body.url;
+        } else {
+            return res.status(400).json({ message: 'Resim dosyası veya URL\'si gereklidir' });
         }
         
         // Mevcut resimleri getir
@@ -186,6 +226,10 @@ router.post('/images', protect, admin, async (req, res) => {
         const updatedImages = await Image.find().sort({ order: 1 });
         res.status(201).json({ message: 'Resim eklendi', image: savedImage, images: updatedImages });
     } catch (error) {
+        // Hata durumunda yüklenen dosyayı sil
+        if (req.file) {
+            fs.unlinkSync(path.join('public', 'uploads', req.file.filename));
+        }
         res.status(500).json({ message: error.message });
     }
 });
@@ -197,6 +241,14 @@ router.delete('/images/:id', protect, admin, async (req, res) => {
         
         if (!image) {
             return res.status(404).json({ message: 'Resim bulunamadı' });
+        }
+        
+        // Eğer resim lokalde yüklüyse, dosyayı sil
+        if (image.url.startsWith('/uploads/')) {
+            const filePath = path.join('public', image.url);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
         }
         
         // Resmi sil
