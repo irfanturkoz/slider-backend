@@ -409,41 +409,12 @@ $(document).ready(function () {
         localStorage.setItem('sliderResimleri', JSON.stringify(resimler));
     }
 
-    // Sıra değiştirme fonksiyonu
-    function sirayiDegistir(id, direction) {
-        console.log('Sıralama isteği:', id, direction); // Debug log
-        $.ajax({
-            url: `${API_URL}/images/${id}/order`,
-            type: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            data: JSON.stringify({ direction }),
-            success: function(response) {
-                console.log('Sıralama başarılı:', response); // Debug log
-                if (response.images) {
-                    resimler = response.images;
-                    resimleriListele();
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Sıralama hatası:', { xhr, status, error }); // Debug log
-                const hata = xhr.responseJSON ? xhr.responseJSON.message : error || 'Bir hata oluştu';
-                alert('Sıralama hatası: ' + hata);
-            }
-        });
-    }
-
-    // Resim ekleme fonksiyonu
-    $("#resimEkleForm").submit(function (e) {
+    // Resim ekleme formu
+    $("#resimForm").submit(function (e) {
         e.preventDefault();
 
         // URL ile resim ekleme
         let resimUrl = $("#resimUrl").val();
-
-        // Dosya yükleme ile resim ekleme
-        let resimDosya = $("#resimDosya")[0].files[0];
 
         if (resimUrl) {
             // URL varsa API'ye gönder
@@ -451,9 +422,9 @@ $(document).ready(function () {
                 url: `${API_URL}/images`,
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 },
-                contentType: 'application/json',
                 data: JSON.stringify({ url: resimUrl }),
                 success: function(data) {
                     resimleriGetir(); // Resimleri yeniden yükle
@@ -461,7 +432,6 @@ $(document).ready(function () {
                 },
                 error: function(err) {
                     console.error('Resim eklenirken hata oluştu:', err);
-                    // Hata 401 (Unauthorized) ise login sayfasına yönlendir
                     if (err.status === 401) {
                         localStorage.removeItem('adminToken');
                         localStorage.removeItem('adminUsername');
@@ -471,40 +441,36 @@ $(document).ready(function () {
                     alert('Resim eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
                 }
             });
-        } else if (resimDosya) {
-            // Dosya yüklendiyse, resmi base64'e çevir ve API'ye gönder
-            let reader = new FileReader();
-            reader.onload = function (e) {
-                $.ajax({
-                    url: `${API_URL}/images`,
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                    contentType: 'application/json',
-                    data: JSON.stringify({ url: e.target.result }),
-                    success: function(data) {
-                        resimleriGetir(); // Resimleri yeniden yükle
-                        $("#resimDosya").val(""); // Formu temizle
-                    },
-                    error: function(err) {
-                        console.error('Resim eklenirken hata oluştu:', err);
-                        // Hata 401 (Unauthorized) ise login sayfasına yönlendir
-                        if (err.status === 401) {
-                            localStorage.removeItem('adminToken');
-                            localStorage.removeItem('adminUsername');
-                            window.location.href = 'login.html';
-                            return;
-                        }
-                        alert('Resim eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
-                    }
-                });
-            };
-            reader.readAsDataURL(resimDosya);
         } else {
-            alert("Lütfen bir resim URL'si girin veya bir dosya seçin.");
+            alert("Lütfen bir resim URL'si girin.");
         }
     });
+
+    // Sıra değiştirme fonksiyonu
+    function sirayiDegistir(id, direction) {
+        console.log('Sıralama isteği:', { id, direction, API_URL }); // Debug için URL'yi de logla
+        $.ajax({
+            url: `${API_URL}/images/${id}/order`,
+            type: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify({ direction }),
+            success: function(response) {
+                console.log('Sıralama başarılı:', response);
+                if (response.images) {
+                    resimler = response.images;
+                    resimleriListele();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Sıralama hatası:', { xhr, status, error, url: `${API_URL}/images/${id}/order` });
+                const hata = xhr.responseJSON ? xhr.responseJSON.message : error || 'Bir hata oluştu';
+                alert('Sıralama hatası: ' + hata);
+            }
+        });
+    }
 
     // Resim silme fonksiyonu
     window.resimSil = function (id) {
