@@ -5,7 +5,8 @@ require('dotenv').config();
 async function createSuperAdmin() {
   try {
     // MongoDB'ye bağlan
-    await mongoose.connect(process.env.MONGODB_URI);
+    const mongoUri = 'mongodb+srv://admin-1:admin@cluster0.muajk.mongodb.net/slider?retryWrites=true&w=majority&appName=Cluster0';
+    await mongoose.connect(mongoUri);
     console.log('MongoDB bağlantısı başarılı');
 
     // Superadmin kullanıcısını kontrol et
@@ -33,6 +34,14 @@ async function createSuperAdmin() {
     console.log('Superadmin bilgileri:');
     console.log('Kullanıcı adı: superadmin');
     console.log('Şifre: superadmin123');
+
+    // Tüm kullanıcıları listele
+    const users = await User.find();
+    console.log('\nMevcut kullanıcılar:');
+    users.forEach(user => {
+      console.log(`- ${user.username} (Admin: ${user.isAdmin}, SuperAdmin: ${user.isSuperAdmin})`);
+    });
+
   } catch (error) {
     console.error('Hata:', error);
   } finally {
