@@ -304,203 +304,179 @@ $(document).ready(function () {
         $.ajax({
             url: `${API_URL}/images`,
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
             success: function(data) {
                 resimler = data;
                 resimleriListele();
             },
             error: function(err) {
                 console.error('Resimler yüklenirken hata oluştu:', err);
-                // Hata 401 (Unauthorized) ise login sayfasına yönlendir
                 if (err.status === 401) {
                     localStorage.removeItem('adminToken');
                     localStorage.removeItem('adminUsername');
                     window.location.href = 'login.html';
                     return;
                 }
-                // Hata durumunda LocalStorage'dan yükle
-                resimler = JSON.parse(localStorage.getItem('sliderResimleri')) || [
-                    { url: "kedi.jpg" },
-                    { url: "4.jpg" },
-                    { url: "6.jpg" },
-                    { url: "resim1.jpg" },
-                    { url: "resim2.jpg" },
-                    { url: "resim3.jpg" }
-                ];
-                resimleriListele();
+                alert('Resimler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.');
             }
         });
     }
 
-    // Resimleri listeleme fonksiyonu
+    // Resimleri listele
     function resimleriListele() {
-        const container = $('#resimListesi');
-        container.empty();
-
-        const table = $('<table>').addClass('table');
-        const thead = $('<thead>').append(
-            $('<tr>').append(
-                $('<th>').text('İşlemler'),
-                $('<th>').text('Sıra'),
-                $('<th>').text('Resim'),
-                $('<th>').text('URL')
-            )
-        );
-        const tbody = $('<tbody>');
-
-        resimler.forEach((resim, index) => {
-            const tr = $('<tr>');
-            
-            // İşlemler hücresi
-            const islemlerTd = $('<td>');
-            const buttonGroup = $('<div>').addClass('btn-group');
-
-            // Yukarı taşıma butonu
-            if (index > 0) {
-                buttonGroup.append(
-                    $('<button>')
-                        .addClass('btn btn-primary btn-sm')
-                        .html('<i class="fas fa-arrow-up"></i>')
-                        .on('click', () => sirayiDegistir(resim._id, 'up'))
-                );
-            }
-
-            // Aşağı taşıma butonu
-            if (index < resimler.length - 1) {
-                buttonGroup.append(
-                    $('<button>')
-                        .addClass('btn btn-primary btn-sm')
-                        .html('<i class="fas fa-arrow-down"></i>')
-                        .on('click', () => sirayiDegistir(resim._id, 'down'))
-                );
-            }
-
-            // Silme butonu
-            buttonGroup.append(
-                $('<button>')
-                    .addClass('btn btn-danger btn-sm')
-                    .html('<i class="fas fa-trash"></i>')
-                    .on('click', () => resimSil(resim._id))
-            );
-
-            islemlerTd.append(buttonGroup);
-            
-            // Diğer hücreler
-            const siraTd = $('<td>').text(index + 1);
-            const resimTd = $('<td>').append(
-                $('<img>')
-                    .addClass('img-thumbnail')
-                    .attr('src', resim.url)
-                    .attr('alt', `Resim ${index + 1}`)
-                    .css('max-height', '100px')
-            );
-            const urlTd = $('<td>').text(resim.url);
-
-            tr.append(islemlerTd, siraTd, resimTd, urlTd);
-            tbody.append(tr);
-        });
-
-        table.append(thead, tbody);
-        container.append(table);
+        const resimListesi = document.getElementById('resimListesi');
+        resimListesi.innerHTML = '';
         
-        // Yedek olarak LocalStorage'a da kaydet
-        localStorage.setItem('sliderResimleri', JSON.stringify(resimler));
-    }
-
-    // Resim ekleme formu
-    $("#resimForm").submit(function (e) {
-        e.preventDefault();
-
-        // URL ile resim ekleme
-        let resimUrl = $("#resimUrl").val();
-
-        if (resimUrl) {
-            // URL varsa API'ye gönder
-            $.ajax({
-                url: `${API_URL}/images`,
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                data: JSON.stringify({ url: resimUrl }),
-                success: function(data) {
-                    resimleriGetir(); // Resimleri yeniden yükle
-                    $("#resimUrl").val(""); // Formu temizle
-                },
-                error: function(err) {
-                    console.error('Resim eklenirken hata oluştu:', err);
-                    if (err.status === 401) {
-                        localStorage.removeItem('adminToken');
-                        localStorage.removeItem('adminUsername');
-                        window.location.href = 'login.html';
-                        return;
-                    }
-                    alert('Resim eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+        resimler.forEach((resim, index) => {
+            const resimItem = document.createElement('div');
+            resimItem.className = 'resim-item mb-3 p-3 border rounded';
+            resimItem.setAttribute('data-id', resim._id);
+            
+            // Resim URL'sini düzelt
+            const resimUrl = resim.url.startsWith('http') ? resim.url : `${API_URL}${resim.url}`;
+            
+            resimItem.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <img src="${resimUrl}" alt="Resim" style="max-width: 200px; max-height: 150px; object-fit: cover;" class="mr-3">
+                    <div>
+                        <p class="mb-1">Sıra: ${resim.order}</p>
+                        <p class="mb-1">URL: ${resim.url}</p>
+                        <button class="btn btn-danger btn-sm" onclick="resmiSil('${resim._id}')">
+                            <i class="fas fa-trash"></i> Sil
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            resimListesi.appendChild(resimItem);
+        });
+        
+        // Sortable özelliğini aktifleştir
+        if (resimler.length > 1) {
+            $("#resimListesi").sortable({
+                update: function(event, ui) {
+                    const yeniSiralama = [];
+                    $("#resimListesi .resim-item").each(function(index) {
+                        yeniSiralama.push({
+                            id: $(this).data('id'),
+                            order: index + 1
+                        });
+                    });
+                    sirayiDegistir(yeniSiralama);
                 }
             });
-        } else {
-            alert("Lütfen bir resim URL'si girin.");
         }
-    });
+    }
 
-    // Sıra değiştirme fonksiyonu
-    function sirayiDegistir(id, direction) {
-        console.log('Sıralama isteği:', { id, direction, API_URL }); // Debug için URL'yi de logla
+    // Yeni sıralamayı kaydet
+    function sirayiDegistir(yeniSiralama) {
         $.ajax({
-            url: `${API_URL}/images/${id}/order`,
+            url: `${API_URL}/images/reorder`,
             type: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            data: JSON.stringify({ direction }),
+            data: JSON.stringify({ orders: yeniSiralama }),
             success: function(response) {
                 console.log('Sıralama başarılı:', response);
                 if (response.images) {
                     resimler = response.images;
                     resimleriListele();
+                    localStorage.setItem('sliderResimleri', JSON.stringify(resimler));
                 }
             },
             error: function(xhr, status, error) {
-                console.error('Sıralama hatası:', { xhr, status, error, url: `${API_URL}/images/${id}/order` });
-                const hata = xhr.responseJSON ? xhr.responseJSON.message : error || 'Bir hata oluştu';
-                alert('Sıralama hatası: ' + hata);
+                console.error('Sıralama hatası:', { xhr, status, error });
+                alert('Sıralama kaydedilirken bir hata oluştu. Sayfa yenileniyor...');
+                location.reload();
             }
         });
     }
 
+    // Resim ekleme formunu yakala
+    document.getElementById('resimForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        const imageFile = document.getElementById('imageFile').files[0];
+        const imageUrl = document.getElementById('imageUrl').value.trim();
+        
+        if (!imageFile && !imageUrl) {
+            alert('Lütfen bir resim dosyası yükleyin veya URL girin');
+            return;
+        }
+        
+        try {
+            let response;
+            
+            if (imageFile) {
+                // Dosya yükleme
+                formData.append('image', imageFile);
+                response = await fetch(`${API_URL}/images`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+            } else {
+                // URL ile ekleme
+                response = await fetch(`${API_URL}/images`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ url: imageUrl })
+                });
+            }
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Resim eklenirken bir hata oluştu');
+            }
+
+            const data = await response.json();
+            alert('Resim başarıyla eklendi');
+            
+            // Formu temizle
+            document.getElementById('resimForm').reset();
+            
+            // Resimleri yeniden listele
+            resimleriGetir();
+        } catch (error) {
+            console.error('Hata:', error);
+            alert('Resim eklenirken bir hata oluştu: ' + error.message);
+        }
+    });
+
     // Resim silme fonksiyonu
-    window.resimSil = function (id) {
-        if (id.toString().length > 5) {
-            // MongoDB ID ise API'den sil
+    function resmiSil(id) {
+        if (confirm('Bu resmi silmek istediğinizden emin misiniz?')) {
             $.ajax({
                 url: `${API_URL}/images/${id}`,
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
                 },
-                success: function() {
-                    resimleriGetir(); // Resimleri yeniden yükle
+                success: function(response) {
+                    alert('Resim başarıyla silindi');
+                    resimleriGetir();
                 },
                 error: function(err) {
                     console.error('Resim silinirken hata oluştu:', err);
-                    // Hata 401 (Unauthorized) ise login sayfasına yönlendir
                     if (err.status === 401) {
                         localStorage.removeItem('adminToken');
                         localStorage.removeItem('adminUsername');
                         window.location.href = 'login.html';
                         return;
                     }
-                    alert('Resim silinirken bir hata oluştu. Lütfen tekrar deneyin.');
+                    alert('Resim silinirken bir hata oluştu');
                 }
             });
-        } else {
-            // LocalStorage'dan sil (yedek yöntem)
-            resimler.splice(id, 1);
-            resimleriListele();
         }
-    };
+    }
+
+    // Global scope'a ekle
+    window.resmiSil = resmiSil;
 });

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Sayfayı 1 saatte bir yenile (3600 saniye) -->
-    <meta http-equiv="refresh" content="3600">
+    <!-- Sayfayı 20 dakikada bir yenile -->
+    <meta http-equiv="refresh" content="1200">
     <title>Duyuru Sayfası</title>
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
@@ -108,20 +108,20 @@
             
             // Carousel'ı başlat
             $('#carouselExampleIndicators').carousel({
-                interval: 50000 // 50 saniye
+                interval: 5000 // 5 saniye
             });
         }
         
         // Sayfa yüklendiğinde resimleri getir
         resimleriGetir();
         
-        // Her 40 saniyede bir resimleri güncelle
-        setInterval(resimleriGetir, 50000);
+        // Her 5 dakikada bir resimleri güncelle
+        setInterval(resimleriGetir, 300000); // 300000 ms = 5 dakika
         
-        // 1 saatte bir sayfayı yenile (JavaScript ile)
+        // 20 dakikada bir sayfayı yenile (JavaScript ile)
         setTimeout(function() {
             window.location.reload();
-        }, 3600000); // 3600000 milisaniye = 1 saat
+        }, 1200000); // 1200000 ms = 20 dakika
     });
 </script>
 </html>
