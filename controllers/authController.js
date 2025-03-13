@@ -66,15 +66,9 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ username });
     
     // Kullanıcı ve şifre kontrolü
-    if (user && (await user.matchPassword(password))) {
+    if (user && user.matchPassword(password)) {
       // Token oluştur
       const token = generateToken(user._id);
-
-      // Cookie'ye token ekle (opsiyonel)
-      res.cookie('token', token, {
-        httpOnly: true,
-        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 gün
-      });
 
       res.json({
         _id: user._id,
@@ -84,9 +78,12 @@ exports.login = async (req, res) => {
         token
       });
     } else {
+      console.log('Login başarısız:', { username, password });
+      console.log('Bulunan kullanıcı:', user);
       res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre' });
     }
   } catch (error) {
+    console.error('Login hatası:', error);
     res.status(500).json({ message: error.message });
   }
 };
