@@ -9,21 +9,20 @@ require('dotenv').config();
 
 const app = express();
 
-// CORS ayarları
-const corsOptions = {
-    origin: ['https://www.dizifilmpal.com', 'https://dizifilmpal.com', 'http://localhost:3000', 'http://localhost:5000'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    optionsSuccessStatus: 204,
-    maxAge: 86400 // 24 saat
-};
+// CORS ayarları - en başa alındı
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', 'https://www.dizifilmpal.com');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-// Global CORS ayarları
-app.use(cors(corsOptions));
+    // OPTIONS istekleri için hemen yanıt ver
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
 
-// CORS ön kontrol istekleri için
-app.options('*', cors(corsOptions));
+    next();
+});
 
 // JSON parser
 app.use(express.json());
@@ -43,10 +42,10 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 // Auth rotaları
-app.use('/api/auth', cors(corsOptions), authRoutes);
+app.use('/api/auth', authRoutes);
 
 // API rotaları
-app.use('/api', cors(corsOptions), apiRoutes);
+app.use('/api', apiRoutes);
 
 // 404 sayfası için yönlendirme
 app.use((req, res, next) => {
