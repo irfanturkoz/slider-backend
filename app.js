@@ -17,11 +17,9 @@ const allowedOrigins = [
     'http://localhost:5000'
 ];
 
-// CORS middleware'i
-const corsMiddleware = (req, res, next) => {
+// CORS başlıklarını ayarla
+const setCorsHeaders = (req, res) => {
     const origin = req.headers.origin;
-    
-    // Origin kontrolü
     if (allowedOrigins.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -29,6 +27,11 @@ const corsMiddleware = (req, res, next) => {
         res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
         res.setHeader('Access-Control-Max-Age', '86400'); // 24 saat
     }
+};
+
+// CORS middleware'i
+const corsMiddleware = (req, res, next) => {
+    setCorsHeaders(req, res);
 
     // Preflight istekleri için
     if (req.method === 'OPTIONS') {
@@ -63,6 +66,7 @@ app.use('/api/auth', corsMiddleware, (req, res, next) => {
     // Auth rotaları için ek güvenlik kontrolleri
     const origin = req.headers.origin;
     if (!origin || !allowedOrigins.includes(origin)) {
+        setCorsHeaders(req, res);
         return res.status(403).json({ 
             message: 'CORS politikası: Bu kaynağa erişim izniniz yok',
             origin: origin
@@ -76,6 +80,7 @@ app.use('/api', corsMiddleware, apiRoutes);
 
 // 404 sayfası için yönlendirme
 app.use((req, res, next) => {
+    setCorsHeaders(req, res);
     // API istekleri için JSON yanıtı
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ message: 'Endpoint bulunamadı' });
@@ -85,8 +90,19 @@ app.use((req, res, next) => {
     res.status(404).sendFile(path.join(__dirname, '../404.html'));
 });
 
-// Hata işleyici middleware
-app.use(errorHandler);
+// Özel hata işleyici middleware
+app.use((err, req, res, next) => {
+    console.error('Hata:', err);
+    
+    // CORS başlıklarını ayarla
+    setCorsHeaders(req, res);
+    
+    // Hata yanıtını gönder
+    res.status(err.status || 500).json({
+        message: err.message || 'Sunucu hatası oluştu',
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+});
 
 // MongoDB bağlantısı
 mongoose.connect(process.env.MONGO_URI)
