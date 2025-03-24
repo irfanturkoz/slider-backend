@@ -9,14 +9,29 @@ require('dotenv').config();
 
 const app = express();
 
-// CORS ayarlarını düzelt - tüm domainlere izin ver
+// CORS ayarlarını düzelt
+const allowedOrigins = [
+    'https://www.dizifilmpal.com',
+    'https://dizifilmpal.com',
+    'http://localhost:3000',
+    'http://localhost:5000'
+];
+
 app.use(cors({
-  origin: ['https://dizifilmpal.com', 'http://localhost:3000', 'http://localhost:5000', '*'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+    origin: function (origin, callback) {
+        // origin null olabilir (örneğin Postman'den gelen istekler için)
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log('CORS isteği reddedildi:', origin);
+            callback(new Error('CORS politikası tarafından reddedildi'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 }));
 
 // CORS ön kontrol istekleri için
@@ -40,16 +55,24 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Her istekte CORS başlıklarını ekle
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  // Uploads klasörüne erişim için özel kontrol
-  if (req.url.startsWith('/uploads/')) {
-    console.log('Uploads klasörüne erişim:', req.url);
-  }
-  
-  next();
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin);
+    }
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    // Preflight istekleri için
+    if (req.method === 'OPTIONS') {
+        return res.status(204).end();
+    }
+    
+    // Uploads klasörüne erişim için özel kontrol
+    if (req.url.startsWith('/uploads/')) {
+        console.log('Uploads klasörüne erişim:', req.url);
+    }
+    
+    next();
 });
 
 // API rotalarını kullan
