@@ -9,40 +9,21 @@ require('dotenv').config();
 
 const app = express();
 
-// CORS ayarlarını düzelt
-const allowedOrigins = [
-    'https://www.dizifilmpal.com',
-    'https://dizifilmpal.com',
-    'http://localhost:3000',
-    'http://localhost:5000'
-];
-
-// CORS başlıklarını ayarla
-const setCorsHeaders = (req, res) => {
-    const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-        res.setHeader('Access-Control-Max-Age', '86400'); // 24 saat
-    }
-};
-
-// CORS middleware'i
-const corsMiddleware = (req, res, next) => {
-    setCorsHeaders(req, res);
-
-    // Preflight istekleri için
-    if (req.method === 'OPTIONS') {
-        return res.status(204).end();
-    }
-
-    next();
+// CORS ayarları
+const corsOptions = {
+    origin: ['https://www.dizifilmpal.com', 'https://dizifilmpal.com', 'http://localhost:3000', 'http://localhost:5000'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    optionsSuccessStatus: 204,
+    maxAge: 86400 // 24 saat
 };
 
 // Global CORS ayarları
-app.use(corsMiddleware);
+app.use(cors(corsOptions));
+
+// CORS ön kontrol istekleri için
+app.options('*', cors(corsOptions));
 
 // JSON parser
 app.use(express.json());
@@ -61,26 +42,14 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Auth rotaları için özel CORS ayarları
-app.use('/api/auth', corsMiddleware, (req, res, next) => {
-    // Auth rotaları için ek güvenlik kontrolleri
-    const origin = req.headers.origin;
-    if (!origin || !allowedOrigins.includes(origin)) {
-        setCorsHeaders(req, res);
-        return res.status(403).json({ 
-            message: 'CORS politikası: Bu kaynağa erişim izniniz yok',
-            origin: origin
-        });
-    }
-    next();
-}, authRoutes);
+// Auth rotaları
+app.use('/api/auth', cors(corsOptions), authRoutes);
 
-// API rotaları için özel CORS ayarları
-app.use('/api', corsMiddleware, apiRoutes);
+// API rotaları
+app.use('/api', cors(corsOptions), apiRoutes);
 
 // 404 sayfası için yönlendirme
 app.use((req, res, next) => {
-    setCorsHeaders(req, res);
     // API istekleri için JSON yanıtı
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ message: 'Endpoint bulunamadı' });
@@ -90,12 +59,9 @@ app.use((req, res, next) => {
     res.status(404).sendFile(path.join(__dirname, '../404.html'));
 });
 
-// Özel hata işleyici middleware
+// Hata işleyici middleware
 app.use((err, req, res, next) => {
     console.error('Hata:', err);
-    
-    // CORS başlıklarını ayarla
-    setCorsHeaders(req, res);
     
     // Hata yanıtını gönder
     res.status(err.status || 500).json({
