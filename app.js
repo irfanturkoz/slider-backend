@@ -17,49 +17,32 @@ const allowedOrigins = [
     'http://localhost:5000'
 ];
 
-const corsOptions = {
-    origin: function (origin, callback) {
-        // origin null olabilir (örneğin Postman'den gelen istekler için)
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            console.log('CORS isteği reddedildi:', origin);
-            callback(new Error('CORS politikası tarafından reddedildi'));
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204
+// CORS middleware'i
+const corsMiddleware = (req, res, next) => {
+    const origin = req.headers.origin;
+    
+    // Origin kontrolü
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+        res.setHeader('Access-Control-Max-Age', '86400'); // 24 saat
+    }
+
+    // Preflight istekleri için
+    if (req.method === 'OPTIONS') {
+        return res.status(204).end();
+    }
+
+    next();
 };
 
 // Global CORS ayarları
-app.use(cors(corsOptions));
+app.use(corsMiddleware);
 
-// CORS ön kontrol istekleri için
-app.options('*', cors(corsOptions));
-
+// JSON parser
 app.use(express.json());
-
-// Her istekte CORS başlıklarını ekle
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-        res.header('Access-Control-Allow-Origin', origin);
-        res.header('Access-Control-Allow-Credentials', 'true');
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    
-    // Preflight istekleri için
-    if (req.method === 'OPTIONS') {
-        res.header('Access-Control-Max-Age', '86400'); // 24 saat
-        return res.status(204).end();
-    }
-    
-    next();
-});
 
 // Statik dosyalar için public klasörünü kullan
 app.use(express.static(path.join(__dirname, 'public')));
@@ -76,10 +59,20 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 // Auth rotaları için özel CORS ayarları
-app.use('/api/auth', cors(corsOptions), authRoutes);
+app.use('/api/auth', corsMiddleware, (req, res, next) => {
+    // Auth rotaları için ek güvenlik kontrolleri
+    const origin = req.headers.origin;
+    if (!origin || !allowedOrigins.includes(origin)) {
+        return res.status(403).json({ 
+            message: 'CORS politikası: Bu kaynağa erişim izniniz yok',
+            origin: origin
+        });
+    }
+    next();
+}, authRoutes);
 
 // API rotaları için özel CORS ayarları
-app.use('/api', cors(corsOptions), apiRoutes);
+app.use('/api', corsMiddleware, apiRoutes);
 
 // 404 sayfası için yönlendirme
 app.use((req, res, next) => {
