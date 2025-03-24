@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Sayfayı 20 dakikada bir yenile -->
-    <meta http-equiv="refresh" content="1200">
+    <!-- Sayfayı 8 saatte bir yenile (28800 saniye) -->
+    <meta http-equiv="refresh" content="28800">
     <title>Duyuru Sayfası</title>
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
@@ -180,10 +180,10 @@
         // Her 5 dakikada bir resimleri güncelle
         setInterval(resimleriGetir, 300000); // 300000 ms = 5 dakika
         
-        // 20 dakikada bir sayfayı yenile (JavaScript ile)
+        // 8 saatte bir sayfayı yenile (JavaScript ile)
         setTimeout(function() {
             window.location.reload();
-        }, 1200000); // 1200000 ms = 20 dakika
+        }, 28800000); // 28800000 ms = 8 saat
     });
 </script>
 </html>
